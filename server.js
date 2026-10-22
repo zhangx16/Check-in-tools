@@ -3,8 +3,30 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { spawn } = require("child_process");
+const {
+  loadLocalEnv,
+  formatDateTime,
+  sleep,
+  DATA_DIR,
+  USER_AGENT,
+  parseCookies,
+  cookiePreview,
+  pickNumber,
+  runConcurrent,
+  normalizeBaseUrl,
+  isAlreadyCheckedInMessage
+} = require("./lib/common");
 
 loadLocalEnv();
+
+const {
+  readAccounts,
+  writeAccounts,
+  writeProviderAccounts,
+  ensureDataFiles: ensureAccountDataFiles
+} = require("./lib/accounts");
+const { refreshAccountStatus, runAccountCheckin } = require("./lib/providers");
+const { telegramBotApiByToken } = require("./lib/telegram");
 
 const HOST = process.env.HOST || "127.0.0.1";
 const PORT = Number(process.env.PORT || 22821);
@@ -14,55 +36,12 @@ const DEFAULT_EMBYPULSE_BASE_URL =
   process.env.DEFAULT_EMBYPULSE_BASE_URL || "https://embypulse.example.com";
 const DEFAULT_EMBYMB_BASE_URL =
   process.env.DEFAULT_EMBYMB_BASE_URL || "https://embymb.ichinosekotomi.com";
-const DEFAULT_ZHOUSANWAN_BASE_URL =
-  process.env.DEFAULT_ZHOUSANWAN_BASE_URL || "https://zhousanwan.xyz";
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "change-this-password";
 const SESSION_SECRET = process.env.SESSION_SECRET || "change-this-session-secret";
 /** Mobile / App API token (Bearer or X-API-Key). Empty = token auth disabled (cookie session still works). */
 const APP_API_TOKEN = String(process.env.APP_API_TOKEN || process.env.CHECKIN_API_TOKEN || "").trim();
-const USER_AGENT =
-  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
-  "(KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36";
-const GLADOS_DEVICE_USER_AGENTS = {
-  Windows:
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-  Mac:
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-  macOS:
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-  Linux:
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-  iPhone:
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 " +
-    "(KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
-  Android:
-    "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36"
-};
 
-function gladosUserAgent(device) {
-  const key = String(device || "").trim();
-  return GLADOS_DEVICE_USER_AGENTS[key] || GLADOS_DEVICE_USER_AGENTS.Windows;
-}
-
-const DATA_DIR = path.join(__dirname, "data");
-const GLADOS_ACCOUNTS_FILE = path.resolve(
-  process.env.GLADOS_ACCOUNTS_FILE || path.join(DATA_DIR, "accounts.json")
-);
-const EMBYPULSE_ACCOUNTS_FILE = path.resolve(
-  process.env.EMBYPULSE_ACCOUNTS_FILE || path.join(DATA_DIR, "embypulse_accounts.json")
-);
-const EMBYMB_ACCOUNTS_FILE = path.resolve(
-  process.env.EMBYMB_ACCOUNTS_FILE || path.join(DATA_DIR, "embymb_accounts.json")
-);
-const ZHOUSANWAN_ACCOUNTS_FILE = path.resolve(
-  process.env.ZHOUSANWAN_ACCOUNTS_FILE || path.join(DATA_DIR, "zhousanwan_accounts.json")
-);
 const EMBYKEEPER_DIR = path.join(DATA_DIR, "embykeeper");
 const EMBYKEEPER_CONFIG_FILE = path.join(EMBYKEEPER_DIR, "config.toml");
 const EMBYKEEPER_FORM_FILE = path.join(EMBYKEEPER_DIR, "form.json");
@@ -74,21 +53,25 @@ const EMBYKEEPER_BIN = path.join(EMBYKEEPER_VENV_DIR, "bin", "embykeeper");
 const EMBYKEEPER_RUNNER = path.join(__dirname, "scripts", "embykeeper_run_once.sh");
 const CUSTOM_TG_WORKER = path.join(__dirname, "scripts", "telegram_bot_checkin.py");
 const PUBLIC_DIR = path.join(__dirname, "public");
+const PROJECT_NAMES_FILE = path.join(DATA_DIR, "project_names.json");
 const BOT_AVATAR_DIR = path.join(PUBLIC_DIR, "bot-avatars");
 const SITE_ICON_DIR = path.join(PUBLIC_DIR, "site-icons");
 const BOT_AVATAR_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const SITE_ICON_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_VPSNAT_BASE_URL = process.env.DEFAULT_VPSNAT_BASE_URL || "https://www.vpsnat.com";
 const PROVIDER_DEFAULT_BASE = {
+  zzcat: "https://user.090911.xyz",
+  vpsnat: DEFAULT_VPSNAT_BASE_URL,
   glados: DEFAULT_GLADOS_BASE_URL,
   embypulse: DEFAULT_EMBYPULSE_BASE_URL,
-  embymb: DEFAULT_EMBYMB_BASE_URL,
-  zhousanwan: DEFAULT_ZHOUSANWAN_BASE_URL
+  embymb: DEFAULT_EMBYMB_BASE_URL
 };
 const PROVIDER_LABELS = {
+  zzcat: "这只猫用户中心",
+  vpsnat: "VPSNAT 纳泰云",
   glados: "GLaDOS",
   embypulse: "EmbyPulse",
   embymb: "EmbyMB",
-  zhousanwan: "周三晚",
   telegram_bot: "Telegram Bot"
 };
 const EMBYKEEPER_BUILTIN_CHECKINERS = {
@@ -97,32 +80,6 @@ const EMBYKEEPER_BUILTIN_CHECKINERS = {
   JingzheProbot: "jingzhe",
   YounoEmbyAgain_bot: "youno"
 };
-
-function loadLocalEnv() {
-  const envPath = path.join(__dirname, ".env");
-  if (!fs.existsSync(envPath)) {
-    return;
-  }
-
-  const lines = fs.readFileSync(envPath, "utf8").split(/\r?\n/);
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) {
-      continue;
-    }
-
-    const index = line.indexOf("=");
-    if (index === -1) {
-      continue;
-    }
-
-    const key = line.slice(0, index).trim();
-    const value = line.slice(index + 1).trim().replace(/^"(.*)"$/, "$1");
-    if (key && process.env[key] === undefined) {
-      process.env[key] = value;
-    }
-  }
-}
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -136,29 +93,8 @@ const MIME_TYPES = {
   ".ico": "image/x-icon"
 };
 
-function formatDateTime(date = new Date()) {
-  return date.toISOString().replace(/\.\d{3}Z$/, "Z");
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function ensureJsonArrayFile(filePath) {
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, JSON.stringify([], null, 2));
-  }
-}
-
 function ensureDataFiles() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-
-  ensureJsonArrayFile(GLADOS_ACCOUNTS_FILE);
-  ensureJsonArrayFile(EMBYPULSE_ACCOUNTS_FILE);
-  ensureJsonArrayFile(EMBYMB_ACCOUNTS_FILE);
-  ensureJsonArrayFile(ZHOUSANWAN_ACCOUNTS_FILE);
+  ensureAccountDataFiles();
   if (!fs.existsSync(EMBYKEEPER_DIR)) {
     fs.mkdirSync(EMBYKEEPER_DIR, { recursive: true });
   }
@@ -167,105 +103,34 @@ function ensureDataFiles() {
   }
 }
 
-function readJsonArray(filePath) {
-  try {
-    const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    return [];
-  }
-}
-
-function normalizeStoredAccount(account, provider) {
-  return {
-    ...account,
-    provider,
-    insecureTls: Boolean(account?.insecureTls)
-  };
-}
-
-function serializeAccountForStorage(account) {
-  const {
-    provider,
-    providerLabel,
-    authPreview,
-    ...rest
-  } = account || {};
-  return rest;
-}
-
-function readAccounts() {
-  ensureDataFiles();
-
-  const gladosAccounts = readJsonArray(GLADOS_ACCOUNTS_FILE).map((item) =>
-    normalizeStoredAccount(item, "glados")
-  );
-  const embypulseAccounts = readJsonArray(EMBYPULSE_ACCOUNTS_FILE).map((item) =>
-    normalizeStoredAccount(item, "embypulse")
-  );
-  const embymbAccounts = readJsonArray(EMBYMB_ACCOUNTS_FILE).map((item) =>
-    normalizeStoredAccount(item, "embymb")
-  );
-  const zhousanwanAccounts = readJsonArray(ZHOUSANWAN_ACCOUNTS_FILE).map((item) =>
-    normalizeStoredAccount(item, "zhousanwan")
-  );
-
-  return [...zhousanwanAccounts, ...embymbAccounts, ...embypulseAccounts, ...gladosAccounts];
-}
-
-function writeAccounts(accounts) {
-  ensureDataFiles();
-  const gladosAccounts = accounts
-    .filter((item) => (item.provider || "glados") === "glados")
-    .map(serializeAccountForStorage);
-  const embypulseAccounts = accounts
-    .filter((item) => (item.provider || "glados") === "embypulse")
-    .map(serializeAccountForStorage);
-  const embymbAccounts = accounts
-    .filter((item) => (item.provider || "glados") === "embymb")
-    .map(serializeAccountForStorage);
-  const zhousanwanAccounts = accounts
-    .filter((item) => (item.provider || "glados") === "zhousanwan")
-    .map(serializeAccountForStorage);
-
-  fs.writeFileSync(GLADOS_ACCOUNTS_FILE, JSON.stringify(gladosAccounts, null, 2));
-  fs.writeFileSync(EMBYPULSE_ACCOUNTS_FILE, JSON.stringify(embypulseAccounts, null, 2));
-  fs.writeFileSync(EMBYMB_ACCOUNTS_FILE, JSON.stringify(embymbAccounts, null, 2));
-  fs.writeFileSync(ZHOUSANWAN_ACCOUNTS_FILE, JSON.stringify(zhousanwanAccounts, null, 2));
-}
-
-function normalizeBaseUrl(value, fallback = DEFAULT_GLADOS_BASE_URL) {
-  const raw = String(value || "").trim();
-  const candidate = raw || fallback;
-  const finalValue = candidate.startsWith("http://") || candidate.startsWith("https://")
-    ? candidate
-    : `https://${candidate}`;
-  return finalValue.replace(/\/+$/, "");
-}
-
-function cookiePreview(cookie) {
-  const trimmed = String(cookie || "").trim();
-  if (!trimmed) {
-    return "";
-  }
-
-  if (trimmed.length <= 18) {
-    return trimmed;
-  }
-
-  return `${trimmed.slice(0, 10)}...${trimmed.slice(-8)}`;
-}
-
 function providerLabel(provider) {
   return PROVIDER_LABELS[provider] || provider || "未知";
 }
 
-function isPasswordProvider(provider) {
-  return ["embypulse", "embymb", "zhousanwan"].includes(provider);
+function readProjectNames() {
+  if (!fs.existsSync(PROJECT_NAMES_FILE)) return {};
+  const names = JSON.parse(fs.readFileSync(PROJECT_NAMES_FILE, "utf8"));
+  if (!names || typeof names !== "object" || Array.isArray(names)) throw new Error("项目名称配置格式错误");
+  return names;
 }
 
-function cloneData(value) {
-  return JSON.parse(JSON.stringify(value));
+function setProjectName(id, name) {
+  const names = readProjectNames();
+  const key = id.toLowerCase();
+  if (name) names[key] = name;
+  else delete names[key];
+  fs.writeFileSync(`${PROJECT_NAMES_FILE}.tmp`, JSON.stringify(names, null, 2));
+  fs.renameSync(`${PROJECT_NAMES_FILE}.tmp`, PROJECT_NAMES_FILE);
+}
+
+function applyProjectNames(projects) {
+  const names = readProjectNames();
+  return projects.map(project => ({ ...project, defaultTitle: project.defaultTitle || project.title,
+    title: names[project.id.toLowerCase()] || project.defaultTitle || project.title }));
+}
+
+function isPasswordProvider(provider) {
+  return ["embypulse", "embymb", "vpsnat"].includes(provider);
 }
 
 function ensureEmbykeeperConfigFile() {
@@ -377,7 +242,7 @@ function normalizeEmbykeeperForm(body = {}) {
 
   return {
     telegramAccounts: telegramAccounts.length ? telegramAccounts : defaults.telegramAccounts,
-    botTemplates: botTemplates.length ? botTemplates : defaults.botTemplates,
+    botTemplates,
     globalCheckiner: {
       timeout: Math.max(10, Number(globalCheckinerSource.timeout ?? defaults.globalCheckiner.timeout) || defaults.globalCheckiner.timeout),
       retries: Math.max(1, Number(globalCheckinerSource.retries ?? defaults.globalCheckiner.retries) || defaults.globalCheckiner.retries),
@@ -581,38 +446,6 @@ function runEmbykeeperOnce() {
   });
 }
 
-function runCommandCapture(command, args, stdin = "") {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      stdio: ["pipe", "pipe", "pipe"]
-    });
-
-    let stdout = "";
-    let stderr = "";
-
-    child.stdout.on("data", (chunk) => {
-      stdout += chunk.toString("utf8");
-    });
-    child.stderr.on("data", (chunk) => {
-      stderr += chunk.toString("utf8");
-    });
-    child.on("error", reject);
-    child.on("close", (code) => {
-      if (code === 0) {
-        resolve(stdout);
-        return;
-      }
-      reject(new Error(stderr.trim() || `${command} exited with code ${code}`));
-    });
-
-    if (stdin) {
-      child.stdin.end(stdin);
-    } else {
-      child.stdin.end();
-    }
-  });
-}
-
 function toPublicAccount(account) {
   const provider = String(account.provider || "glados").trim().toLowerCase() || "glados";
   return {
@@ -772,30 +605,43 @@ function updateMobileTelegramBot(botUsername, body = {}) {
 }
 
 function deleteMobileTelegramBot(botUsername) {
-  const form = readEmbykeeperForm();
+  // Preserve worker-specific fields (for example buttonSequence) on other bots.
+  const form = JSON.parse(fs.readFileSync(EMBYKEEPER_FORM_FILE, "utf8"));
+  const key = String(botUsername).replace(/^@/, "").toLowerCase();
   const before = (form.botTemplates || []).length;
   form.botTemplates = (form.botTemplates || []).filter(
-    (b) => String(b.botUsername || "").replace(/^@/, "") !== botUsername
+    (b) => String(b.botUsername || "").replace(/^@/, "").toLowerCase() !== key
   );
   if (form.botTemplates.length === before) {
     return { ok: false, error: "Bot 不存在" };
   }
-  if (!form.botTemplates.length) {
-    form.botTemplates = defaultEmbykeeperForm().botTemplates;
-  }
-  persistEmbykeeperForm(form);
+  const config = renderEmbykeeperConfigFromForm(normalizeEmbykeeperForm(form));
+  writeEmbykeeperForm(form);
+  writeEmbykeeperConfig(config);
 
   // Drop results for this bot so summary refreshes cleanly.
   try {
     const results = readTelegramCheckinResults();
     if (results?.bots) {
-      delete results.bots[botUsername];
-      delete results.bots[`@${botUsername}`];
+      for (const username of Object.keys(results.bots)) {
+        if (username.replace(/^@/, "").toLowerCase() === key) delete results.bots[username];
+      }
       fs.writeFileSync(TELEGRAM_CHECKIN_RESULTS_FILE, JSON.stringify(results, null, 2));
     }
   } catch {
     // ignore
   }
+  const skipPath = path.join(DATA_DIR, "telegram_bot_checkin_skip.json");
+  if (fs.existsSync(skipPath)) {
+    const cache = JSON.parse(fs.readFileSync(skipPath, "utf8"));
+    for (const bots of Object.values(cache)) {
+      for (const username of Object.keys(bots || {})) {
+        if (username.replace(/^@/, "").toLowerCase() === key) delete bots[username];
+      }
+    }
+    fs.writeFileSync(skipPath, JSON.stringify(cache, null, 2));
+  }
+  setProjectName(`tg:${botUsername}`, "");
   return { ok: true, deletedBotUsername: botUsername };
 }
 
@@ -863,28 +709,12 @@ function removePhoneFromTelegramBot(botUsername, phone) {
   return { ok: true, botUsername: user, removedPhone: phone, targetPhones: nextTargets };
 }
 
-function isAlreadyCheckedInMessage(message) {
-  const lowered = String(message || "").toLowerCase();
-  return [
-    "tomorrow",
-    "already",
-    "checked in",
-    "idempotent",
-    "已签到",
-    "已经签到",
-    "今天已经签到过了",
-    "请勿重复签到",
-    "重复签到",
-    "明天再来",
-    "重复"
-  ].some((marker) => lowered.includes(marker));
-}
-
 function normalizeProvider(value) {
+  if (String(value || "").trim().toLowerCase() === "zzcat") return "zzcat";
   const raw = String(value || "").trim().toLowerCase();
   if (raw === "embypulse") return "embypulse";
+  if (raw === "vpsnat") return "vpsnat";
   if (raw === "embymb") return "embymb";
-  if (raw === "zhousanwan") return "zhousanwan";
   return "glados";
 }
 
@@ -895,12 +725,10 @@ function normalizeAccountInput(body = {}, current = {}) {
   const username = String(body.username ?? current.username ?? "").trim();
   const password = String(body.password ?? current.password ?? "").trim();
   const insecureTls = Boolean(body.insecureTls ?? current.insecureTls ?? false);
-  const baseFallback = provider === "embypulse"
+  const baseFallback = provider === "zzcat" ? PROVIDER_DEFAULT_BASE.zzcat : provider === "vpsnat" ? DEFAULT_VPSNAT_BASE_URL : provider === "embypulse"
     ? DEFAULT_EMBYPULSE_BASE_URL
     : provider === "embymb"
       ? DEFAULT_EMBYMB_BASE_URL
-    : provider === "zhousanwan"
-      ? DEFAULT_ZHOUSANWAN_BASE_URL
       : DEFAULT_GLADOS_BASE_URL;
 
   return {
@@ -909,7 +737,8 @@ function normalizeAccountInput(body = {}, current = {}) {
     provider,
     name,
     baseUrl: normalizeBaseUrl(body.baseUrl ?? current.baseUrl ?? baseFallback, baseFallback),
-    cookie: provider === "glados" ? cookie : "",
+    ...(provider === "vpsnat" ? { token: String(body.token ?? current.token ?? "").trim(), refreshToken: String(body.refreshToken ?? current.refreshToken ?? "").trim() } : {}),
+    cookie: ["glados", "zzcat"].includes(provider) ? cookie : "",
     username: isPasswordProvider(provider) ? username : "",
     password: isPasswordProvider(provider) ? password : "",
     insecureTls: isPasswordProvider(provider) ? insecureTls : false,
@@ -963,95 +792,6 @@ function sendText(res, statusCode, message) {
   });
   res.end(message);
 }
-
-function parseCookies(cookieHeader = "") {
-  return cookieHeader
-    .split(";")
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .reduce((acc, part) => {
-      const index = part.indexOf("=");
-      if (index === -1) {
-        return acc;
-      }
-
-      const key = part.slice(0, index);
-      const value = decodeURIComponent(part.slice(index + 1));
-      acc[key] = value;
-      return acc;
-    }, {});
-}
-
-function parseSetCookieLines(headers) {
-  if (typeof headers.getSetCookie === "function") {
-    return headers.getSetCookie();
-  }
-
-  const raw = headers.get("set-cookie");
-  if (!raw) {
-    return [];
-  }
-
-  return raw.split(/,(?=[^;,=\s]+=[^;,]+)/g).map((item) => item.trim()).filter(Boolean);
-}
-
-function buildCookieHeaderFromSetCookie(headers) {
-  return parseSetCookieLines(headers)
-    .map((line) => line.split(";")[0].trim())
-    .filter(Boolean)
-    .join("; ");
-}
-
-function mergeCookieHeaders(...cookieHeaders) {
-  const cookies = new Map();
-  for (const header of cookieHeaders) {
-    for (const part of String(header || "").split(";")) {
-      const item = part.trim();
-      if (!item) continue;
-      const index = item.indexOf("=");
-      if (index <= 0) continue;
-      cookies.set(item.slice(0, index), item.slice(index + 1));
-    }
-  }
-
-  return Array.from(cookies.entries())
-    .map(([key, value]) => `${key}=${value}`)
-    .join("; ");
-}
-
-function cookieValue(cookieHeader, name) {
-  const prefix = `${name}=`;
-  const found = String(cookieHeader || "")
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(prefix));
-  if (!found) {
-    return "";
-  }
-
-  try {
-    return decodeURIComponent(found.slice(prefix.length));
-  } catch {
-    return found.slice(prefix.length);
-  }
-}
-
-function maybeAllowInsecureTls(account) {
-  if (account?.insecureTls) {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-  }
-}
-
-function calculateDaysUntil(dateText) {
-  const parsed = new Date(dateText);
-  if (Number.isNaN(parsed.getTime())) {
-    return null;
-  }
-
-  const diff = parsed.getTime() - Date.now();
-  return (diff / (1000 * 60 * 60 * 24)).toFixed(2);
-}
-
 function signSession(username) {
   return crypto.createHmac("sha256", SESSION_SECRET).update(username).digest("hex");
 }
@@ -1226,16 +966,6 @@ function deriveWebsiteItemStatus(account) {
   }
   return "unknown";
 }
-
-function pickNumber(...values) {
-  for (const value of values) {
-    if (value === null || value === undefined || value === "") continue;
-    const n = Number(value);
-    if (Number.isFinite(n)) return n;
-  }
-  return null;
-}
-
 function mapWebsiteAccountToSummaryItem(account) {
   const provider = String(account.provider || "glados").trim().toLowerCase() || "glados";
   const checkin = account.lastCheckin || {};
@@ -1521,24 +1251,7 @@ async function telegramBotApi(method, params = {}) {
   if (!TELEGRAM_BOT_TOKEN) {
     throw new Error("TELEGRAM_BOT_TOKEN not configured");
   }
-  const url = new URL(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`);
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null) {
-      url.searchParams.set(key, String(value));
-    }
-  }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), Math.min(REQUEST_TIMEOUT_MS, 15000));
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    const payload = await response.json();
-    if (!payload?.ok) {
-      throw new Error(payload?.description || `Telegram API ${method} failed`);
-    }
-    return payload.result;
-  } finally {
-    clearTimeout(timer);
-  }
+  return telegramBotApiByToken(TELEGRAM_BOT_TOKEN, method, params);
 }
 
 /**
@@ -1756,7 +1469,7 @@ async function buildSummaryProjects(websiteItems, telegramItems, req) {
     }
   }
 
-  for (const [provider, accounts] of webByProvider.entries()) {
+  const webProjects = await Promise.all(Array.from(webByProvider.entries()).map(async ([provider, accounts]) => {
     const statuses = accounts.map((a) => a.status);
     const status = aggregateProjectStatus(statuses);
     const counts = emptyStatusCounts();
@@ -1772,7 +1485,7 @@ async function buildSummaryProjects(websiteItems, telegramItems, req) {
     const siteBase = baseUrlByProvider.get(provider) || PROVIDER_DEFAULT_BASE[provider] || "";
     const iconPath = await ensureSiteIcon(provider, siteBase);
     const avatarURL = iconPath ? `${base}${iconPath}` : null;
-    projects.push({
+    return {
       id: `web:${provider}`,
       kind: "website",
       provider,
@@ -1793,8 +1506,9 @@ async function buildSummaryProjects(websiteItems, telegramItems, req) {
         healthy
       },
       accounts
-    });
-  }
+    };
+  }));
+  projects.push(...webProjects);
 
   // Telegram: group by botUsername
   const tgByBot = new Map();
@@ -1864,7 +1578,7 @@ async function buildSummaryProjects(websiteItems, telegramItems, req) {
     });
   }
 
-  return projects;
+  return applyProjectNames(projects);
 }
 
 async function buildMobileSummary(req) {
@@ -1964,1335 +1678,6 @@ async function buildMobileSummary(req) {
       : null
   };
 }
-
-async function gladosApiRequest(account, method, routePath, payload, userAgent) {
-  const baseUrl = normalizeBaseUrl(account.baseUrl);
-  const host = new URL(baseUrl).hostname;
-  const url = new URL(`/api/${routePath.replace(/^\/+/, "")}`, `${baseUrl}/`);
-  const headers = {
-    Accept: "application/json, text/plain, */*",
-    Cookie: account.cookie,
-    Origin: baseUrl,
-    Referer: `${baseUrl}/console/checkin`,
-    "User-Agent": userAgent || account.userAgent || gladosUserAgent(account.loginDevice)
-  };
-
-  const options = {
-    method,
-    headers,
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  };
-
-  if (payload !== undefined) {
-    headers["Content-Type"] = "application/json;charset=UTF-8";
-    options.body = JSON.stringify(payload ?? { token: host });
-  }
-
-  let response;
-  try {
-    response = await fetch(url, options);
-  } catch (error) {
-    throw new Error(`请求失败: ${error.message}`);
-  }
-
-  const raw = await response.text();
-  let data;
-  try {
-    data = raw ? JSON.parse(raw) : {};
-  } catch (error) {
-    throw new Error(`接口返回不是 JSON: ${raw.slice(0, 180)}`);
-  }
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${data.message || raw.slice(0, 180)}`);
-  }
-
-  return data;
-}
-
-async function embypulseLogin(account) {
-  maybeAllowInsecureTls(account);
-
-  const baseUrl = normalizeBaseUrl(account.baseUrl, DEFAULT_EMBYPULSE_BASE_URL);
-  const loginUrl = new URL("/api/requests/auth", `${baseUrl}/`);
-  const response = await fetch(loginUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "User-Agent": USER_AGENT
-    },
-    body: JSON.stringify({
-      username: account.username,
-      password: account.password
-    }),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  });
-
-  const raw = await response.text();
-  let data = {};
-  try {
-    data = raw ? JSON.parse(raw) : {};
-  } catch {
-    data = { status: "error", message: raw.slice(0, 180) };
-  }
-
-  if (!response.ok || data?.status !== "success") {
-    throw new Error(data?.message || `登录失败 HTTP ${response.status}`);
-  }
-
-  const cookie = buildCookieHeaderFromSetCookie(response.headers);
-  if (!cookie) {
-    throw new Error("登录成功但未获得会话 Cookie");
-  }
-
-  return {
-    baseUrl,
-    cookie
-  };
-}
-
-async function embypulseApiRequest(session, method, routePath, payload) {
-  const url = new URL(routePath.replace(/^\//, ""), `${session.baseUrl}/`);
-  const headers = {
-    Accept: "application/json",
-    Cookie: session.cookie,
-    Origin: session.baseUrl,
-    Referer: `${session.baseUrl}/`,
-    "User-Agent": USER_AGENT
-  };
-
-  if (payload !== undefined) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  const response = await fetch(url, {
-    method,
-    headers,
-    body: payload !== undefined ? JSON.stringify(payload) : undefined,
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  });
-
-  const raw = await response.text();
-  let data = {};
-  try {
-    data = raw ? JSON.parse(raw) : {};
-  } catch {
-    data = { status: "error", message: raw.slice(0, 180) };
-  }
-
-  if (!response.ok) {
-    throw new Error(data?.message || `HTTP ${response.status}`);
-  }
-
-  return data;
-}
-
-async function embypulseCheckSession(session) {
-  return await embypulseApiRequest(session, "GET", "/api/requests/check");
-}
-
-async function embymbLogin(account) {
-  maybeAllowInsecureTls(account);
-
-  const baseUrl = normalizeBaseUrl(account.baseUrl, DEFAULT_EMBYMB_BASE_URL);
-  const loginUrl = new URL("/api/v1/auth/login", `${baseUrl}/`);
-  const useEmail = String(account.username || "").includes("@");
-  const credentials = useEmail
-    ? { email: account.username, username: "", password: account.password }
-    : { username: account.username, password: account.password };
-  const response = await fetch(loginUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "User-Agent": USER_AGENT,
-      Origin: baseUrl,
-      Referer: `${baseUrl}/login`
-    },
-    body: JSON.stringify(credentials),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  });
-
-  const raw = await response.text();
-  let data = {};
-  try {
-    data = raw ? JSON.parse(raw) : {};
-  } catch {
-    data = { success: false, message: raw.slice(0, 180) };
-  }
-
-  if (!response.ok || data?.success !== true) {
-    throw new Error(data?.message || `登录失败 HTTP ${response.status}`);
-  }
-
-  const cookie = buildCookieHeaderFromSetCookie(response.headers);
-  if (!cookie) {
-    throw new Error("登录成功但未获得会话 Cookie");
-  }
-
-  return {
-    baseUrl,
-    cookie
-  };
-}
-
-async function embymbApiRequest(session, method, routePath, payload) {
-  const url = new URL(routePath.replace(/^\//, ""), `${session.baseUrl}/`);
-  const headers = {
-    Accept: "application/json, text/plain, */*",
-    Cookie: session.cookie,
-    Origin: session.baseUrl,
-    Referer: `${session.baseUrl}/dashboard`,
-    "User-Agent": USER_AGENT
-  };
-
-  if (payload !== undefined) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  const response = await fetch(url, {
-    method,
-    headers,
-    body: payload !== undefined ? JSON.stringify(payload) : undefined,
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  });
-
-  const raw = await response.text();
-  let data = {};
-  try {
-    data = raw ? JSON.parse(raw) : {};
-  } catch {
-    data = { success: false, message: raw.slice(0, 180) };
-  }
-
-  if (!response.ok) {
-    throw new Error(data?.message || `HTTP ${response.status}`);
-  }
-
-  return data;
-}
-
-async function embymbSigninMe(session) {
-  return await embymbApiRequest(session, "GET", "/api/v1/signin/me");
-}
-
-async function embymbSigninConfig(session) {
-  return await embymbApiRequest(session, "GET", "/api/v1/signin/config");
-}
-
-function isEmbymbAlreadySigned(payload, infoPayload) {
-  const message = String(payload?.message || "");
-  return Boolean(infoPayload?.data?.today_signed) || payload?.success === true && (
-    message.includes("已签到") ||
-    message.includes("已经签到") ||
-    message.includes("今日已签到") ||
-    message.toLowerCase().includes("already")
-  );
-}
-
-function summarizeEmbymbStatusPayload(infoPayload, configPayload) {
-  if (infoPayload?.success === true) {
-    const data = infoPayload?.data || {};
-    const config = configPayload?.data || {};
-    const todaySigned = Boolean(data.today_signed);
-    const currentPoints = Number(data.current_points ?? 0);
-    const currentStreak = Number(data.current_streak ?? 0);
-    const longestStreak = Number(data.longest_streak ?? 0);
-    const dailyMin = Number(config.daily_min ?? data.daily_min ?? 0);
-    const dailyMax = Number(config.daily_max ?? data.daily_max ?? 0);
-    const currency = data.currency_name || config.currency_name || "积分";
-
-    return {
-      ok: true,
-      code: 0,
-      state: "active",
-      message: todaySigned ? "今日已签到" : "可签到",
-      leftDays: null,
-      vip: null,
-      level: null,
-      plan: currency,
-      currency,
-      points: currentPoints,
-      currentStreak,
-      longestStreak,
-      todaySigned,
-      lastSignInDate: data.last_signin_date || "",
-      totalPoints: Number(data.total_points ?? 0),
-      dailyMin,
-      dailyMax,
-      bonusTable: Array.isArray(config.bonus_table) ? config.bonus_table : [],
-      raw: cloneData({ infoPayload, configPayload })
-    };
-  }
-
-  return {
-    ok: false,
-    code: null,
-    state: "error",
-    message: infoPayload?.message || "签到状态获取失败",
-    leftDays: null,
-    vip: null,
-    level: null,
-    plan: "EmbyMB",
-    currency: infoPayload?.data?.currency_name || configPayload?.data?.currency_name || "积分",
-    points: null,
-    currentStreak: null,
-    longestStreak: null,
-    todaySigned: false,
-    lastSignInDate: "",
-    totalPoints: null,
-    dailyMin: Number(configPayload?.data?.daily_min ?? 0),
-    dailyMax: Number(configPayload?.data?.daily_max ?? 0),
-    bonusTable: Array.isArray(configPayload?.data?.bonus_table) ? configPayload.data.bonus_table : [],
-    raw: cloneData({ infoPayload, configPayload })
-  };
-}
-
-function summarizeEmbymbCheckinPayload(payload, infoPayload) {
-  const data = payload?.data || {};
-  const message = String(payload?.message || "");
-  const currentPoints = Number(data.current_points ?? infoPayload?.data?.current_points ?? 0);
-  const dailyPoints = Number(data.daily_points ?? data.bonus_points ?? 0);
-  const currency = data.currency_name || infoPayload?.data?.currency_name || "积分";
-  const lastSignInDate = data.last_signin_date || infoPayload?.data?.last_signin_date || "";
-  const already = Boolean(data.created === false) || isEmbymbAlreadySigned(payload, infoPayload);
-
-  if (payload?.success === true) {
-    return {
-      ok: true,
-      already,
-      code: 0,
-      message: message || (already ? "今天已经签到过了" : "签到成功"),
-      points: dailyPoints,
-      balance: currentPoints,
-      currency,
-      currentPoints,
-      lastSignInDate,
-      todaySigned: true,
-      raw: cloneData(payload)
-    };
-  }
-
-  if (already) {
-    return {
-      ok: true,
-      already: true,
-      code: 0,
-      message: message || "今天已经签到过了",
-      points: 0,
-      balance: currentPoints,
-      currency,
-      currentPoints,
-      lastSignInDate,
-      todaySigned: true,
-      raw: cloneData(payload)
-    };
-  }
-
-  return {
-    ok: false,
-    already: false,
-    code: payload?.code ?? null,
-    message: message || "签到失败",
-    points: 0,
-    balance: currentPoints,
-    currency,
-    currentPoints,
-    lastSignInDate,
-    todaySigned: Boolean(infoPayload?.data?.today_signed),
-    raw: cloneData(payload)
-  };
-}
-
-function reconcileEmbymbCheckinWithStatus(checkin, status) {
-  if (checkin?.ok || !status?.todaySigned) {
-    return checkin;
-  }
-
-  const balance = status.points != null
-    ? Number(status.points)
-    : checkin?.balance ?? checkin?.currentPoints ?? null;
-
-  return {
-    ...checkin,
-    ok: true,
-    already: true,
-    code: checkin?.code ?? 0,
-    message: status.message || "状态刷新确认今日已签到",
-    points: 0,
-    balance,
-    currentPoints: balance,
-    currency: status.currency || checkin?.currency || "积分",
-    lastSignInDate: status.lastSignInDate || checkin?.lastSignInDate || "",
-    todaySigned: true,
-    reconciledAfterStatusRefresh: true
-  };
-}
-
-function splitZhousanwanHttpMessage(httpMessage) {
-  const crlfIndex = httpMessage.lastIndexOf("\r\n\r\n");
-  const lfIndex = httpMessage.lastIndexOf("\n\n");
-  let separatorIndex = -1;
-  let separatorLength = 0;
-
-  if (crlfIndex >= 0 && (lfIndex < 0 || crlfIndex >= lfIndex)) {
-    separatorIndex = crlfIndex;
-    separatorLength = 4;
-  } else if (lfIndex >= 0) {
-    separatorIndex = lfIndex;
-    separatorLength = 2;
-  }
-
-  if (separatorIndex < 0) {
-    return { headerText: "", body: httpMessage };
-  }
-
-  return {
-    headerText: httpMessage.slice(0, separatorIndex),
-    body: httpMessage.slice(separatorIndex + separatorLength)
-  };
-}
-
-function extractZhousanwanSetCookies(headerText) {
-  return headerText
-    .split(/\r?\n/)
-    .filter((line) => /^set-cookie:/i.test(line))
-    .map((line) => line.replace(/^set-cookie:\s*/i, "").split(";")[0].trim())
-    .filter(Boolean)
-    .join("; ");
-}
-
-function isTransientZhousanwanError(message) {
-  const text = String(message || "").toLowerCase();
-  return [
-    "http 408",
-    "http 425",
-    "http 429",
-    "http 500",
-    "http 502",
-    "http 503",
-    "http 504",
-    "error code: 502",
-    "error code: 503",
-    "error code: 504",
-    "bad gateway",
-    "gateway timeout",
-    "service unavailable",
-    "cloudflare",
-    "timed out",
-    "timeout",
-    "econnreset",
-    "econnrefused",
-    "enotfound",
-    "socket hang up",
-    "tls",
-    "ssl",
-    "temporarily unavailable",
-    "接口返回不是 json",
-    "接口返回异常"
-  ].some((marker) => text.includes(marker));
-}
-
-function beijingDateString(date = new Date()) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Shanghai",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).format(date);
-}
-
-async function zhousanwanCurlJson(baseUrl, method, routePath, payload, cookie = "") {
-  const url = new URL(routePath, `${baseUrl}/`).toString();
-  const marker = "__ZHOUSANWAN_HTTP__:";
-  const upperMethod = String(method || "GET").toUpperCase();
-  const hasBody = payload !== undefined;
-  const args = [
-    "--http1.1",
-    "--retry",
-    "3",
-    "--retry-delay",
-    "2",
-    "--retry-all-errors",
-    "--max-time",
-    String(Math.max(5, Math.ceil(REQUEST_TIMEOUT_MS / 1000))),
-    "-sS",
-    "-i",
-    "-X",
-    upperMethod,
-    url,
-    "-H",
-    "Accept: application/json",
-    "-H",
-    "X-Requested-With: next-portal",
-    "-H",
-    `Origin: ${baseUrl}`,
-    "-H",
-    `Referer: ${baseUrl}/dashboard`,
-    "-H",
-    `User-Agent: ${USER_AGENT}`
-  ];
-
-  const csrf = cookieValue(cookie, "next_csrf");
-  if (cookie) {
-    args.push("-H", `Cookie: ${cookie}`);
-  }
-  if (upperMethod !== "GET" && upperMethod !== "HEAD" && upperMethod !== "OPTIONS" && csrf) {
-    args.push("-H", `X-CSRF-Token: ${csrf}`);
-  }
-  if (hasBody) {
-    args.push("-H", "Content-Type: application/json", "--data-binary", "@-");
-  }
-  args.push("-w", `\n${marker}%{http_code}`);
-
-  const stdin = hasBody ? JSON.stringify(payload) : "";
-  const raw = await runCommandCapture("curl", args, stdin);
-  const markerIndex = raw.lastIndexOf(`\n${marker}`);
-  if (markerIndex === -1) {
-    throw new Error(`周三晚接口返回异常: ${raw.slice(0, 180)}`);
-  }
-
-  const httpMessage = raw.slice(0, markerIndex);
-  const statusCode = Number(raw.slice(markerIndex + marker.length + 1).trim());
-  const { headerText, body } = splitZhousanwanHttpMessage(httpMessage);
-  const setCookies = extractZhousanwanSetCookies(headerText);
-  const bodyText = String(body || "").trim();
-
-  let data = {};
-  let parseError = null;
-  if (bodyText) {
-    try {
-      data = JSON.parse(bodyText);
-    } catch (error) {
-      parseError = error;
-    }
-  }
-
-  if (!Number.isFinite(statusCode) || statusCode >= 400) {
-    const statusLabel = Number.isFinite(statusCode) ? `HTTP ${statusCode}` : "HTTP 未知";
-    const message =
-      data?.error?.message ||
-      data?.message ||
-      (typeof data?.error === "string" ? data.error : "") ||
-      (bodyText ? bodyText.slice(0, 180) : statusLabel);
-    throw new Error(message.includes("HTTP ") ? message : `${statusLabel}: ${message}`);
-  }
-
-  if (parseError) {
-    throw new Error(`周三晚接口返回不是 JSON: ${bodyText.slice(0, 180)}`);
-  }
-
-  return {
-    data,
-    cookie: mergeCookieHeaders(cookie, setCookies),
-    statusCode
-  };
-}
-
-async function zhousanwanLogin(account) {
-  const baseUrl = normalizeBaseUrl(account.baseUrl, DEFAULT_ZHOUSANWAN_BASE_URL);
-  const deviceId = account.deviceId || `checkin-${crypto.createHash("sha256").update(account.username).digest("hex").slice(0, 16)}`;
-  const response = await zhousanwanCurlJson(baseUrl, "POST", "/api/v1/auth/login", {
-    account_name: account.username,
-    password: account.password,
-    device_id: deviceId
-  });
-
-  if (!response.data?.ok) {
-    throw new Error(response.data?.error?.message || "周三晚登录失败");
-  }
-  if (!response.cookie) {
-    throw new Error("周三晚登录成功但未获得会话 Cookie");
-  }
-
-  return {
-    baseUrl,
-    cookie: response.cookie
-  };
-}
-
-async function zhousanwanApiRequest(session, method, routePath, payload) {
-  const response = await zhousanwanCurlJson(session.baseUrl, method, routePath, payload, session.cookie);
-  session.cookie = response.cookie || session.cookie;
-  return response.data;
-}
-
-function formatMinorAmount(value) {
-  const amount = Number(value ?? 0);
-  if (!Number.isFinite(amount)) {
-    return "--";
-  }
-  return (amount / 100).toFixed(2);
-}
-
-function zhousanwanLedgerItems(walletPayload) {
-  if (Array.isArray(walletPayload?.data?.ledger?.items)) {
-    return walletPayload.data.ledger.items;
-  }
-  if (Array.isArray(walletPayload?.ledger?.items)) {
-    return walletPayload.ledger.items;
-  }
-  return [];
-}
-
-function isZhousanwanCheckinEntry(item) {
-  return (
-    item?.reference_type === "finance.checkin" ||
-    item?.reason === "finance.checkin_reward"
-  );
-}
-
-function latestZhousanwanCheckin(walletPayload) {
-  return zhousanwanLedgerItems(walletPayload).find((item) => isZhousanwanCheckinEntry(item)) || null;
-}
-
-function findZhousanwanCheckinOnDate(walletPayload, date = beijingDateString()) {
-  return (
-    zhousanwanLedgerItems(walletPayload).find(
-      (item) => isZhousanwanCheckinEntry(item) && String(item?.reference_id || "") === date
-    ) || null
-  );
-}
-
-function summarizeZhousanwanStatusPayload(payload) {
-  if (payload?.ok) {
-    const wallet = payload?.data?.wallet || {};
-    const latestCheckin = latestZhousanwanCheckin(payload);
-    const todayCheckin = findZhousanwanCheckinOnDate(payload);
-    return {
-      ok: true,
-      code: 0,
-      state: "active",
-      message: todayCheckin
-        ? "今日已签到"
-        : latestCheckin
-          ? "状态正常，最近有签到记录"
-          : "状态正常",
-      leftDays: null,
-      vip: null,
-      level: null,
-      plan: "周三晚",
-      points: Number(wallet.balance_minor ?? 0),
-      balance: formatMinorAmount(wallet.balance_minor),
-      currency: wallet.currency || "TOKEN",
-      lastCheckinDate: latestCheckin?.reference_id || "",
-      todaySigned: Boolean(todayCheckin),
-      todayCheckinDate: todayCheckin?.reference_id || "",
-      raw: cloneData(payload)
-    };
-  }
-
-  return {
-    ok: false,
-    code: null,
-    state: "error",
-    message: payload?.error?.message || payload?.message || "钱包状态获取失败",
-    points: null,
-    balance: null,
-    currency: "TOKEN",
-    todaySigned: false,
-    raw: cloneData(payload)
-  };
-}
-
-function summarizeZhousanwanCheckinPayload(payload) {
-  const message = String(payload?.error?.message || payload?.message || "");
-  if (payload?.ok) {
-    const data = payload.data || {};
-    const entry = data.entry || {};
-    const wallet = data.wallet || {};
-    const idempotent = Boolean(data.idempotent);
-    return {
-      ok: true,
-      already: idempotent,
-      code: 0,
-      message: idempotent ? "今天已经签到过了" : "签到成功",
-      points: Number(entry.amount_minor ?? data.checkin?.reward_minor ?? 0),
-      balance: Number(wallet.balance_minor ?? entry.balance_after_minor ?? 0),
-      balanceText: formatMinorAmount(wallet.balance_minor ?? entry.balance_after_minor),
-      currency: wallet.currency || data.checkin?.currency || "TOKEN",
-      checkinDate: data.checkin?.checkin_date || entry.reference_id || "",
-      raw: cloneData(payload)
-    };
-  }
-
-  if (isAlreadyCheckedInMessage(message)) {
-    return {
-      ok: true,
-      already: true,
-      code: 0,
-      message: message || "今天已经签到过了",
-      points: 0,
-      balance: null,
-      raw: cloneData(payload)
-    };
-  }
-
-  return {
-    ok: false,
-    already: false,
-    code: payload?.error?.code || null,
-    message: message || "签到失败",
-    points: 0,
-    balance: null,
-    raw: cloneData(payload)
-  };
-}
-
-function summarizeZhousanwanAlreadyFromStatus(status) {
-  return {
-    ok: true,
-    already: true,
-    code: 0,
-    message: "今天已经签到过了",
-    points: 0,
-    balance: status?.points ?? null,
-    balanceText: status?.balance ?? null,
-    currency: status?.currency || "TOKEN",
-    checkinDate: status?.todayCheckinDate || status?.lastCheckinDate || beijingDateString(),
-    raw: status?.raw || null,
-    fromWallet: true
-  };
-}
-
-function reconcileZhousanwanCheckinWithStatus(checkin, status) {
-  if (checkin?.ok || !status?.todaySigned) {
-    return checkin;
-  }
-  return {
-    ...summarizeZhousanwanAlreadyFromStatus(status),
-    reconciledAfterStatusRefresh: true,
-    previousMessage: checkin?.message || ""
-  };
-}
-
-function summarizeEmbypulseStatusPayload(payload, sessionPayload) {
-  if (payload?.status === "success") {
-    return {
-      ok: true,
-      code: 0,
-      state: "active",
-      message: payload?.data?.has_checked_in ? "今日已签到" : "可签到",
-      leftDays: calculateDaysUntil(sessionPayload?.user?.expire_date),
-      vip: null,
-      level: null,
-      plan: "EmbyPulse",
-      points: Number(payload?.data?.points ?? 0),
-      expireDate: sessionPayload?.user?.expire_date || "",
-      raw: cloneData(payload)
-    };
-  }
-
-  return {
-    ok: false,
-    code: null,
-    state: "error",
-    message: payload?.message || "积分状态获取失败",
-    leftDays: calculateDaysUntil(sessionPayload?.user?.expire_date),
-    vip: null,
-    level: null,
-    plan: "EmbyPulse",
-    points: null,
-    expireDate: sessionPayload?.user?.expire_date || "",
-    raw: cloneData(payload)
-  };
-}
-
-function summarizeEmbypulseCheckinPayload(payload, infoPayload) {
-  const message = String(payload?.message || "");
-
-  if (payload?.status === "success") {
-    return {
-      ok: true,
-      already: false,
-      code: 0,
-      message: message || "签到成功",
-      points: Number(payload?.reward ?? 0),
-      balance: Number(payload?.balance ?? infoPayload?.data?.points ?? 0),
-      raw: cloneData(payload)
-    };
-  }
-
-  if (isAlreadyCheckedInMessage(message)) {
-    return {
-      ok: true,
-      already: true,
-      code: 0,
-      message: message || "今天已经签到过了",
-      points: 0,
-      balance: Number(infoPayload?.data?.points ?? 0),
-      raw: cloneData(payload)
-    };
-  }
-
-  return {
-    ok: false,
-    already: false,
-    code: null,
-    message: message || "签到失败",
-    points: 0,
-    balance: Number(infoPayload?.data?.points ?? 0),
-    raw: cloneData(payload)
-  };
-}
-
-function summarizeStatusPayload(payload) {
-  const code = Number(payload?.code ?? -999);
-
-  if (code === 0) {
-    const data = payload?.data || {};
-    return {
-      ok: true,
-      code,
-      state: "active",
-      message: payload?.message || "状态正常",
-      leftDays: data.leftDays ?? null,
-      vip: data.vip ?? null,
-      level: data.level ?? null,
-      plan: data.plan ?? null,
-      raw: cloneData(payload)
-    };
-  }
-
-  if (code === -100) {
-    return {
-      ok: false,
-      code,
-      state: "unpaid",
-      message: payload?.message || "待激活或未付费",
-      gift: payload?.from || "",
-      boarding: payload?.boarding || "",
-      raw: cloneData(payload)
-    };
-  }
-
-  if (code === -101) {
-    return {
-      ok: false,
-      code,
-      state: "expired",
-      message: payload?.message || "套餐已过期",
-      raw: cloneData(payload)
-    };
-  }
-
-  if (code === -2) {
-    return {
-      ok: false,
-      code,
-      state: "unauthorized",
-      message: payload?.message || "Cookie 失效或无权限",
-      raw: cloneData(payload)
-    };
-  }
-
-  return {
-    ok: false,
-    code,
-    state: "error",
-    message: payload?.message || "状态获取失败",
-    raw: cloneData(payload)
-  };
-}
-
-function summarizeCheckinPayload(payload) {
-  const code = Number(payload?.code ?? -999);
-  const message = String(payload?.message || "");
-
-  if (code === 0) {
-    return {
-      ok: true,
-      already: false,
-      code,
-      message: message || "签到成功",
-      points: payload?.points ?? null,
-      raw: cloneData(payload)
-    };
-  }
-
-  if (isAlreadyCheckedInMessage(message)) {
-    return {
-      ok: true,
-      already: true,
-      code,
-      message: message || "今天可能已经签过了",
-      points: payload?.points ?? null,
-      raw: cloneData(payload)
-    };
-  }
-
-  if (code === -2) {
-    return {
-      ok: false,
-      already: false,
-      code,
-      message: "Cookie 失效或无权限",
-      points: payload?.points ?? null,
-      raw: cloneData(payload)
-    };
-  }
-
-  if (code === 4 && payload?.reason === "device-mismatch") {
-    return {
-      ok: false,
-      already: false,
-      code,
-      reason: payload.reason,
-      loginDevice: payload.loginDevice || null,
-      currentDevice: payload.currentDevice || null,
-      message: message || "签到设备与登录设备不一致",
-      points: payload?.points ?? null,
-      raw: cloneData(payload)
-    };
-  }
-
-  return {
-    ok: false,
-    already: false,
-    code,
-    message: message || "签到失败",
-    points: payload?.points ?? null,
-    raw: cloneData(payload)
-  };
-}
-
-async function refreshAccountStatus(account) {
-  if ((account.provider || "glados") === "embymb") {
-    const now = formatDateTime();
-    let status;
-
-    try {
-      const session = await embymbLogin(account);
-      const infoPayload = await embymbSigninMe(session);
-      const configPayload = await embymbSigninConfig(session);
-      status = summarizeEmbymbStatusPayload(infoPayload, configPayload);
-    } catch (error) {
-      status = {
-        ok: false,
-        code: null,
-        state: "error",
-        message: error.message,
-        leftDays: null,
-        vip: null,
-        level: null,
-        plan: "EmbyMB",
-        currency: "积分",
-        points: null,
-        currentStreak: null,
-        longestStreak: null,
-        todaySigned: false,
-        lastSignInDate: "",
-        totalPoints: null,
-        dailyMin: null,
-        dailyMax: null,
-        bonusTable: [],
-        raw: null
-      };
-    }
-
-    const nextAccount = {
-      ...account,
-      lastStatusAt: now,
-      lastStatus: status,
-      updatedAt: now
-    };
-
-    return {
-      account: nextAccount,
-      summary: {
-        id: nextAccount.id,
-        name: nextAccount.name,
-        status
-      }
-    };
-  }
-
-  if ((account.provider || "glados") === "zhousanwan") {
-    const now = formatDateTime();
-    let status;
-
-    try {
-      const session = await zhousanwanLogin(account);
-      const payload = await zhousanwanApiRequest(session, "GET", "/api/v1/finance/wallet/me?limit=35");
-      status = summarizeZhousanwanStatusPayload(payload);
-    } catch (error) {
-      status = {
-        ok: false,
-        code: null,
-        state: "error",
-        message: error.message,
-        points: null,
-        balance: null,
-        currency: "TOKEN",
-        raw: null
-      };
-    }
-
-    const nextAccount = {
-      ...account,
-      lastStatusAt: now,
-      lastStatus: status,
-      updatedAt: now
-    };
-
-    return {
-      account: nextAccount,
-      summary: {
-        id: nextAccount.id,
-        name: nextAccount.name,
-        status
-      }
-    };
-  }
-
-  if ((account.provider || "glados") === "embypulse") {
-    const now = formatDateTime();
-    let status;
-
-    try {
-      const session = await embypulseLogin(account);
-      const sessionPayload = await embypulseCheckSession(session);
-      const payload = await embypulseApiRequest(session, "GET", "/api/user/points/info");
-      status = summarizeEmbypulseStatusPayload(payload, sessionPayload);
-    } catch (error) {
-      status = {
-        ok: false,
-        code: null,
-        state: "error",
-        message: error.message,
-        points: null,
-        expireDate: "",
-        raw: null
-      };
-    }
-
-    const nextAccount = {
-      ...account,
-      lastStatusAt: now,
-      lastStatus: status,
-      updatedAt: now
-    };
-
-    return {
-      account: nextAccount,
-      summary: {
-        id: nextAccount.id,
-        name: nextAccount.name,
-        status
-      }
-    };
-  }
-
-  const now = formatDateTime();
-  let nextAccount = { ...account };
-  let result;
-
-  try {
-    const payload = await gladosApiRequest(account, "GET", "user/status");
-    result = summarizeStatusPayload(payload);
-  } catch (error) {
-    result = {
-      ok: false,
-      code: null,
-      state: "error",
-      message: error.message,
-      raw: null
-    };
-  }
-
-  nextAccount = {
-    ...nextAccount,
-    lastStatusAt: now,
-    lastStatus: result,
-    updatedAt: now
-  };
-
-  return {
-    account: nextAccount,
-    summary: {
-      id: nextAccount.id,
-      name: nextAccount.name,
-      status: result
-    }
-  };
-}
-
-async function runAccountCheckin(account) {
-  if ((account.provider || "glados") === "embymb") {
-    const now = formatDateTime();
-    let nextAccount = { ...account };
-    let checkin;
-
-    try {
-      const session = await embymbLogin(account);
-      const infoPayload = await embymbSigninMe(session);
-
-      if (Boolean(infoPayload?.data?.today_signed)) {
-        checkin = summarizeEmbymbCheckinPayload({
-          success: true,
-          message: "今日已签到",
-          data: {
-            created: false,
-            current_points: infoPayload?.data?.current_points,
-            daily_points: 0,
-            currency_name: infoPayload?.data?.currency_name,
-            last_signin_date: infoPayload?.data?.last_signin_date,
-            total_points: infoPayload?.data?.total_points
-          }
-        }, infoPayload);
-      } else {
-        const payload = await embymbApiRequest(session, "POST", "/api/v1/signin");
-        checkin = summarizeEmbymbCheckinPayload(payload, infoPayload);
-      }
-    } catch (error) {
-      checkin = {
-        ok: false,
-        already: false,
-        code: null,
-        message: error.message,
-        points: 0,
-        balance: null,
-        currency: "积分",
-        currentPoints: null,
-        lastSignInDate: "",
-        todaySigned: false,
-        raw: null
-      };
-    }
-
-    nextAccount = {
-      ...nextAccount,
-      lastCheckinAt: now,
-      lastCheckin: checkin,
-      updatedAt: now
-    };
-
-    nextAccount = (await refreshAccountStatus(nextAccount)).account;
-    checkin = reconcileEmbymbCheckinWithStatus(nextAccount.lastCheckin, nextAccount.lastStatus);
-    nextAccount.lastCheckin = checkin;
-
-    return {
-      account: nextAccount,
-      summary: {
-        id: nextAccount.id,
-        name: nextAccount.name,
-        checkin,
-        status: nextAccount.lastStatus || null
-      }
-    };
-  }
-
-  if ((account.provider || "glados") === "zhousanwan") {
-    const now = formatDateTime();
-    let nextAccount = { ...account };
-    let checkin;
-    const maxAttempts = Math.max(1, Number(process.env.CHECKIN_MAX_ATTEMPTS || 5));
-    const retryDelayMs = Math.max(0, Number(process.env.CHECKIN_RETRY_DELAY_MS || 8000));
-    const attempts = [];
-
-    for (let attemptNumber = 1; attemptNumber <= maxAttempts; attemptNumber += 1) {
-      try {
-        const session = await zhousanwanLogin(account);
-        const walletPayload = await zhousanwanApiRequest(
-          session,
-          "GET",
-          "/api/v1/finance/wallet/me?limit=35"
-        );
-        const status = summarizeZhousanwanStatusPayload(walletPayload);
-        if (status.todaySigned) {
-          checkin = summarizeZhousanwanAlreadyFromStatus(status);
-        } else {
-          // Frontend posts an empty JSON object body to /api/v1/finance/checkins.
-          const payload = await zhousanwanApiRequest(
-            session,
-            "POST",
-            "/api/v1/finance/checkins",
-            {}
-          );
-          checkin = summarizeZhousanwanCheckinPayload(payload);
-        }
-      } catch (error) {
-        checkin = {
-          ok: false,
-          already: false,
-          code: null,
-          message: error.message,
-          points: 0,
-          balance: null,
-          raw: null
-        };
-      }
-
-      attempts.push({
-        attempt: attemptNumber,
-        ok: checkin.ok,
-        already: checkin.already,
-        points: checkin.points,
-        balance: checkin.balance,
-        message: checkin.message,
-        at: formatDateTime()
-      });
-
-      if (checkin.ok || attemptNumber >= maxAttempts || !isTransientZhousanwanError(checkin.message)) {
-        break;
-      }
-
-      if (retryDelayMs > 0) {
-        await sleep(Math.min(60000, retryDelayMs * attemptNumber));
-      }
-    }
-
-    nextAccount = {
-      ...nextAccount,
-      lastCheckinAt: now,
-      lastCheckin: checkin,
-      updatedAt: now
-    };
-
-    nextAccount = (await refreshAccountStatus(nextAccount)).account;
-    checkin = reconcileZhousanwanCheckinWithStatus(checkin, nextAccount.lastStatus);
-    checkin = {
-      ...checkin,
-      attemptCount: attempts.length,
-      maxAttempts,
-      retryCount: Math.max(0, attempts.length - 1),
-      attempts
-    };
-    nextAccount.lastCheckin = checkin;
-
-    return {
-      account: nextAccount,
-      summary: {
-        id: nextAccount.id,
-        name: nextAccount.name,
-        checkin,
-        status: nextAccount.lastStatus || null
-      }
-    };
-  }
-
-  if ((account.provider || "glados") === "embypulse") {
-    const now = formatDateTime();
-    let nextAccount = { ...account };
-    let checkin;
-
-    try {
-      const session = await embypulseLogin(account);
-      const infoPayload = await embypulseApiRequest(session, "GET", "/api/user/points/info");
-
-      if (Boolean(infoPayload?.data?.has_checked_in)) {
-        checkin = summarizeEmbypulseCheckinPayload({
-          status: "error",
-          message: "今天已经签到过了，明天再来吧！"
-        }, infoPayload);
-      } else {
-        const payload = await embypulseApiRequest(session, "POST", "/api/user/points/checkin");
-        checkin = summarizeEmbypulseCheckinPayload(payload, infoPayload);
-      }
-    } catch (error) {
-      checkin = {
-        ok: false,
-        already: false,
-        code: null,
-        message: error.message,
-        points: 0,
-        balance: null,
-        raw: null
-      };
-    }
-
-    nextAccount = {
-      ...nextAccount,
-      lastCheckinAt: now,
-      lastCheckin: checkin,
-      updatedAt: now
-    };
-
-    nextAccount = (await refreshAccountStatus(nextAccount)).account;
-
-    return {
-      account: nextAccount,
-      summary: {
-        id: nextAccount.id,
-        name: nextAccount.name,
-        checkin,
-        status: nextAccount.lastStatus || null
-      }
-    };
-  }
-
-  const now = formatDateTime();
-  let nextAccount = { ...account };
-  let checkin;
-
-  try {
-    const host = new URL(normalizeBaseUrl(account.baseUrl)).hostname;
-    let userAgent = account.userAgent || gladosUserAgent(account.loginDevice);
-    let payload = await gladosApiRequest(account, "POST", "user/checkin", { token: host }, userAgent);
-
-    if (Number(payload?.code) === 4 && payload?.reason === "device-mismatch") {
-      const matchedAgent = gladosUserAgent(payload.loginDevice);
-      if (matchedAgent !== userAgent) {
-        payload = await gladosApiRequest(account, "POST", "user/checkin", { token: host }, matchedAgent);
-        userAgent = matchedAgent;
-      }
-    }
-
-    checkin = summarizeCheckinPayload(payload);
-    checkin.userAgent = userAgent;
-    if (payload?.loginDevice) {
-      checkin.loginDevice = payload.loginDevice;
-    }
-  } catch (error) {
-    checkin = {
-      ok: false,
-      already: false,
-      code: null,
-      message: error.message,
-      points: null,
-      raw: null
-    };
-  }
-
-  nextAccount = {
-    ...nextAccount,
-    lastCheckinAt: now,
-    lastCheckin: checkin,
-    updatedAt: now
-  };
-  if (checkin.userAgent) {
-    nextAccount.userAgent = checkin.userAgent;
-  }
-  if (checkin.loginDevice) {
-    nextAccount.loginDevice = checkin.loginDevice;
-  }
-
-  if (checkin.ok) {
-    const refreshed = await refreshAccountStatus(nextAccount);
-    nextAccount = refreshed.account;
-  } else if (checkin.code === -2) {
-    nextAccount.lastStatusAt = now;
-    nextAccount.lastStatus = {
-      ok: false,
-      code: -2,
-      state: "unauthorized",
-      message: "Cookie 失效或无权限",
-      raw: null
-    };
-  }
-
-  return {
-    account: nextAccount,
-    summary: {
-      id: nextAccount.id,
-      name: nextAccount.name,
-      checkin,
-      status: nextAccount.lastStatus || null
-    }
-  };
-}
-
 function findAccountOrNull(accounts, id) {
   return accounts.find((item) => item.id === id) || null;
 }
@@ -3308,11 +1693,12 @@ async function runBatch(accounts, ids, worker) {
     };
   }
 
+  const concurrency = Math.max(1, Number(process.env.CHECKIN_CONCURRENCY || 4));
+  const processedList = await runConcurrent(selected, worker, concurrency);
   const updatedById = new Map();
   const results = [];
 
-  for (const account of selected) {
-    const processed = await worker(account);
+  for (const processed of processedList) {
     updatedById.set(processed.account.id, processed.account);
     results.push(processed.summary);
   }
@@ -3390,6 +1776,82 @@ async function handleApi(req, res, url) {
 
     if (method === "GET" && pathname === "/api/v1/summary") {
       sendJson(res, 200, await buildMobileSummary(req));
+      return;
+    }
+
+    if (method === "GET" && pathname === "/api/v1/dashboard") {
+      const summary = await buildMobileSummary(req);
+      // Keep dashboard aggregates explicit when only some accounts completed.
+      for (const project of summary.projects) {
+        const statuses = (project.accounts || []).map(a => a.status);
+        if (statuses.includes("skipped") && statuses.some(s => s === "success" || s === "already") && !statuses.includes("failed")) {
+          project.status = "partial";
+        }
+        if (project.status === "pending") project.status = "unknown";
+      }
+      const form = readEmbykeeperForm();
+      const configuredBots = new Set((form.botTemplates || []).map(b => String(b.botUsername || "").replace(/^@/, "").toLowerCase()));
+      // A worker already in flight can finish after deletion; hide orphaned results.
+      summary.projects = summary.projects.filter(p => p.kind !== "telegram_bot" || configuredBots.has(String(p.botUsername || "").toLowerCase()));
+      const existing = new Set(summary.projects.filter(p => p.botUsername).map(p => p.botUsername.toLowerCase()));
+      for (const bot of form.botTemplates || []) {
+        const username = String(bot.botUsername || "").replace(/^@/, "").trim();
+        if (!username || existing.has(username.toLowerCase())) continue;
+        existing.add(username.toLowerCase());
+        const targets = bot.targetPhones || bot.target_phones || [];
+        const accounts = (form.telegramAccounts || [])
+          .filter(a => a.enabled !== false && a.checkiner !== false && (!targets.length || targets.includes(a.phone)))
+          .map(a => ({ accountName: a.phone, phone: a.phone, status: "unknown", checkedAt: "", message: "暂无签到记录" }));
+        summary.projects.push({ id: `tg:${username}`, kind: "telegram_bot", title: bot.name || username,
+          subtitle: `@${username}`, botUsername: username, status: "unknown", accountCount: accounts.length,
+          checkedAt: "", accounts });
+      }
+      sendJson(res, 200, { projects: applyProjectNames(summary.projects), generatedAt: new Date().toISOString() });
+      return;
+    }
+
+    const dashboardProjectMatch = pathname.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)$/);
+    if (method === "PATCH" && dashboardProjectMatch) {
+      const projectId = decodeURIComponent(dashboardProjectMatch[1]);
+      const body = await readRequestBody(req);
+      if (typeof body.name !== "string" || [...body.name.trim()].length > 60 || /[\x00-\x1f\x7f]/.test(body.name)) {
+        sendJson(res, 400, { error: "名称须为不超过 60 字的单行文本，留空恢复默认" });
+        return;
+      }
+      let defaultTitle;
+      if (projectId.startsWith("web:")) {
+        const provider = projectId.slice(4);
+        if (Object.hasOwn(PROVIDER_DEFAULT_BASE, provider) && readAccounts().some(a => a.provider === provider)) defaultTitle = providerLabel(provider);
+      } else if (projectId.startsWith("tg:")) {
+        const bot = readEmbykeeperForm().botTemplates.find(b => String(b.botUsername || "").replace(/^@/, "").toLowerCase() === projectId.slice(3).toLowerCase());
+        if (bot) defaultTitle = bot.name || bot.botUsername;
+      }
+      if (!defaultTitle) {
+        sendJson(res, 404, { error: "项目不存在" });
+        return;
+      }
+      const name = body.name.trim();
+      setProjectName(projectId, name);
+      sendJson(res, 200, { ok: true, id: projectId, title: name || defaultTitle, defaultTitle });
+      return;
+    }
+    if (method === "DELETE" && dashboardProjectMatch) {
+      const projectId = decodeURIComponent(dashboardProjectMatch[1]);
+      if (projectId.startsWith("tg:")) {
+        const result = deleteMobileTelegramBot(projectId.slice(3));
+        sendJson(res, result.ok ? 200 : 404, result);
+      } else if (projectId.startsWith("web:")) {
+        const provider = projectId.slice(4);
+        if (!Object.hasOwn(PROVIDER_DEFAULT_BASE, provider) || !readAccounts().some(a => a.provider === provider)) {
+          sendJson(res, 404, { error: "项目不存在" });
+          return;
+        }
+        writeProviderAccounts(provider, []);
+        setProjectName(projectId, "");
+        sendJson(res, 200, { ok: true, deletedId: projectId });
+      } else {
+        sendJson(res, 404, { error: "项目不存在" });
+      }
       return;
     }
 
@@ -3559,17 +2021,14 @@ async function handleApi(req, res, url) {
         sendJson(res, 400, { error: "没有可签到的账号" });
         return;
       }
-      const results = [];
-      for (const account of selected) {
-        const processed = await runAccountCheckin(account);
-        accounts = accounts.map((item) => (item.id === account.id ? processed.account : item));
-        results.push({
-          id: account.id,
-          name: account.name,
-          ok: Boolean(processed.account?.lastCheckin?.ok),
-          message: processed.account?.lastCheckin?.message || processed.summary?.checkin?.message || ""
-        });
-      }
+      const processed = await runBatch(accounts, selected.map((item) => item.id), runAccountCheckin);
+      accounts = processed.accounts;
+      const results = processed.results.map((summary) => ({
+        id: summary.id,
+        name: summary.name,
+        ok: Boolean(summary?.checkin?.ok),
+        message: summary?.checkin?.message || ""
+      }));
       writeAccounts(accounts);
       sendJson(res, 200, {
         ok: results.every((r) => r.ok),
@@ -3835,6 +2294,19 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname.startsWith("/api/")) {
       await handleApi(req, res, url);
+      return;
+    }
+
+    if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/") {
+      res.writeHead(302, { Location: "/dashboard/", "Cache-Control": "no-store" });
+      res.end();
+      return;
+    }
+
+    if ((req.method === "GET" || req.method === "HEAD") &&
+        /^\/dashboard\/(?:index\.html|dashboard-runtime\.js|dashboard-patches\.css|reference-\d+\.css)?$/.test(url.pathname)) {
+      if (url.pathname === "/dashboard/") url.pathname += "index.html";
+      serveStatic(req, res, url);
       return;
     }
 

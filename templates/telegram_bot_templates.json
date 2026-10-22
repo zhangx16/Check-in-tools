@@ -1,0 +1,154 @@
+[
+  {
+    "botUsername": "mdlrtgy_bot",
+    "name": "mdlrtgy_bot",
+    "commands": [
+      "/start"
+    ],
+    "successKeywords": [
+      "签到成功",
+      "簽到成功",
+      "打卡成功"
+    ],
+    "checkedKeywords": [
+      "您今天已经签到过了",
+      "今天已经签到",
+      "今日已经签到",
+      "已经签到过了",
+      "今日已签到",
+      "今天已签到",
+      "今日已打卡",
+      "今天已打卡",
+      "请勿重复签到"
+    ],
+    "failKeywords": [
+      "签到失败",
+      "打卡失败",
+      "错误",
+      "error",
+      "invalid"
+    ],
+    "textIgnore": [
+      "签到中"
+    ],
+    "targetPhones": [],
+    "sendInterval": 3,
+    "isChat": false,
+    "waitResponse": true,
+    "buttonSequence": [
+      "用户配置",
+      "每日签到"
+    ]
+  },
+  {
+    "botUsername": "Freshippo_bot",
+    "name": "Freshippo_bot",
+    "commands": [
+      "/start"
+    ],
+    "successKeywords": [
+      "签到成功",
+      "簽到成功",
+      "打卡成功"
+    ],
+    "checkedKeywords": [
+      "您今天已经签到过了",
+      "今天已经签到",
+      "今日已经签到",
+      "已经签到过了",
+      "今日已签到",
+      "今天已签到",
+      "今日已打卡",
+      "今天已打卡",
+      "请勿重复签到"
+    ],
+    "failKeywords": [
+      "签到失败",
+      "打卡失败",
+      "错误",
+      "error",
+      "invalid"
+    ],
+    "textIgnore": [
+      "签到中"
+    ],
+    "targetPhones": [],
+    "sendInterval": 3,
+    "isChat": false,
+    "waitResponse": true
+  },
+  {
+    "botUsername": "fengyuegeBOt",
+    "name": "fengyuegeBOt",
+    "commands": [
+      "/start"
+    ],
+    "successKeywords": [
+      "签到成功",
+      "簽到成功",
+      "打卡成功"
+    ],
+    "checkedKeywords": [
+      "您今天已经签到过了",
+      "今天已经签到",
+      "今日已经签到",
+      "已经签到过了",
+      "今日已签到",
+      "今天已签到",
+      "今日已打卡",
+      "今天已打卡",
+      "请勿重复签到"
+    ],
+    "failKeywords": [
+      "签到失败",
+      "打卡失败",
+      "错误",
+      "error",
+      "invalid"
+    ],
+    "textIgnore": [
+      "签到中"
+    ],
+    "targetPhones": [],
+    "sendInterval": 3,
+    "isChat": false,
+    "waitResponse": true
+  },
+  {
+    "botUsername": "bb_emby_bot",
+    "name": "bb_emby_bot",
+    "commands": [
+      "/start"
+    ],
+    "successKeywords": [
+      "签到成功",
+      "簽到成功",
+      "打卡成功"
+    ],
+    "checkedKeywords": [
+      "您今天已经签到过了",
+      "今天已经签到",
+      "今日已经签到",
+      "已经签到过了",
+      "今日已签到",
+      "今天已签到",
+      "今日已打卡",
+      "今天已打卡",
+      "请勿重复签到"
+    ],
+    "failKeywords": [
+      "签到失败",
+      "打卡失败",
+      "错误",
+      "error",
+      "invalid"
+    ],
+    "textIgnore": [
+      "签到中"
+    ],
+    "targetPhones": [],
+    "sendInterval": 3,
+    "isChat": false,
+    "waitResponse": true
+  }
+]

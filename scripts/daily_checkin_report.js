@@ -1,568 +1,16 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
+const { loadLocalEnv, formatIso, formatBeijing } = require("../lib/common");
 loadLocalEnv();
 
-const PROJECT_ROOT = path.join(__dirname, "..");
-const DATA_DIR = path.join(PROJECT_ROOT, "data");
-const ACCOUNTS_FILE = path.resolve(process.env.GLADOS_ACCOUNTS_FILE || path.join(DATA_DIR, "accounts.json"));
-const TELEGRAM_CHAT_ID_FILE = path.join(DATA_DIR, "telegram-chat-id.txt");
-const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 20000);
+const { readProviderAccounts, writeProviderAccounts } = require("../lib/accounts");
+const glados = require("../lib/providers/glados");
+const { runWithRetries, runDailyJob, getDailyConfig } = require("../lib/daily");
+
 const DEFAULT_BASE_URL = "https://glados.network";
-const TELEGRAM_BOT_TOKEN = String(process.env.TELEGRAM_BOT_TOKEN || "").trim();
-const TELEGRAM_CHAT_ID = String(process.env.TELEGRAM_CHAT_ID || "").trim();
-const CHECKIN_MAX_ATTEMPTS = Math.max(1, Number(process.env.CHECKIN_MAX_ATTEMPTS || 3));
-const CHECKIN_RETRY_DELAY_MS = Math.max(0, Number(process.env.CHECKIN_RETRY_DELAY_MS || 5000));
-const TELEGRAM_ALERT_ON_FAILURE = parseBoolean(process.env.TELEGRAM_ALERT_ON_FAILURE, true);
-const TELEGRAM_DRY_RUN = parseBoolean(process.env.TELEGRAM_DRY_RUN, false);
-const GLADOS_DEVICE_USER_AGENTS = {
-  Windows:
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-  Mac:
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-  macOS:
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-  Linux:
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-  iPhone:
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 " +
-    "(KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
-  Android:
-    "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36"
-};
-
-function gladosUserAgent(device) {
-  const key = String(device || "").trim();
-  return GLADOS_DEVICE_USER_AGENTS[key] || GLADOS_DEVICE_USER_AGENTS.Windows;
-}
-
-function loadLocalEnv() {
-  const envPath = path.join(__dirname, "..", ".env");
-  if (!fs.existsSync(envPath)) {
-    return;
-  }
-
-  const lines = fs.readFileSync(envPath, "utf8").split(/\r?\n/);
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) {
-      continue;
-    }
-
-    const index = line.indexOf("=");
-    if (index === -1) {
-      continue;
-    }
-
-    const key = line.slice(0, index).trim();
-    const value = line.slice(index + 1).trim().replace(/^"(.*)"$/, "$1");
-    if (key && process.env[key] === undefined) {
-      process.env[key] = value;
-    }
-  }
-}
-
-function formatIso(date = new Date()) {
-  return date.toISOString().replace(/\.\d{3}Z$/, "Z");
-}
-
-function formatBeijing(date = new Date()) {
-  return new Intl.DateTimeFormat("zh-CN", {
-    timeZone: "Asia/Shanghai",
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit"
-  }).format(date);
-}
-
-function parseBoolean(value, fallback) {
-  const normalized = String(value ?? "").trim().toLowerCase();
-  if (!normalized) {
-    return fallback;
-  }
-
-  if (["1", "true", "yes", "on"].includes(normalized)) {
-    return true;
-  }
-
-  if (["0", "false", "no", "off"].includes(normalized)) {
-    return false;
-  }
-
-  return fallback;
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-}
-
-function readAccounts() {
-  ensureDataDir();
-  if (!fs.existsSync(ACCOUNTS_FILE)) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf8"));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    return [];
-  }
-}
-
-function writeAccounts(accounts) {
-  ensureDataDir();
-  fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-}
-
-function normalizeBaseUrl(value) {
-  const raw = String(value || "").trim();
-  const candidate = raw || DEFAULT_BASE_URL;
-  const finalValue = candidate.startsWith("http://") || candidate.startsWith("https://")
-    ? candidate
-    : `https://${candidate}`;
-  return finalValue.replace(/\/+$/, "");
-}
-
-function cloneData(value) {
-  return value == null ? null : JSON.parse(JSON.stringify(value));
-}
-
-function isAlreadyCheckedInMessage(message) {
-  const lowered = String(message || "").toLowerCase();
-  return ["tomorrow", "already", "checked in", "已签到", "明天", "重复"].some((marker) =>
-    lowered.includes(marker)
-  );
-}
-
-async function gladosApiRequest(account, method, routePath, payload, userAgent) {
-  const baseUrl = normalizeBaseUrl(account.baseUrl);
-  const host = new URL(baseUrl).hostname;
-  const url = new URL(`/api/${routePath.replace(/^\/+/, "")}`, `${baseUrl}/`);
-  const headers = {
-    Accept: "application/json, text/plain, */*",
-    Cookie: account.cookie,
-    Origin: baseUrl,
-    Referer: `${baseUrl}/console/checkin`,
-    "User-Agent": userAgent || account.userAgent || gladosUserAgent(account.loginDevice)
-  };
-
-  const options = {
-    method,
-    headers,
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  };
-
-  if (payload !== undefined) {
-    headers["Content-Type"] = "application/json;charset=UTF-8";
-    options.body = JSON.stringify(payload ?? { token: host });
-  }
-
-  let response;
-  try {
-    response = await fetch(url, options);
-  } catch (error) {
-    throw new Error(`请求失败: ${error.message}`);
-  }
-
-  const raw = await response.text();
-  let data;
-  try {
-    data = raw ? JSON.parse(raw) : {};
-  } catch (error) {
-    throw new Error(`接口返回不是 JSON: ${raw.slice(0, 180)}`);
-  }
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${data.message || raw.slice(0, 180)}`);
-  }
-
-  return data;
-}
-
-function summarizeStatusPayload(payload) {
-  const code = Number(payload?.code ?? -999);
-  if (code === 0) {
-    const data = payload?.data || {};
-    return {
-      ok: true,
-      code,
-      state: "active",
-      message: payload?.message || "状态正常",
-      leftDays: data.leftDays ?? null,
-      vip: data.vip ?? null,
-      level: data.level ?? null,
-      plan: data.plan ?? null,
-      raw: cloneData(payload)
-    };
-  }
-
-  if (code === -100) {
-    return {
-      ok: false,
-      code,
-      state: "unpaid",
-      message: payload?.message || "待激活或未付费",
-      raw: cloneData(payload)
-    };
-  }
-
-  if (code === -101) {
-    return {
-      ok: false,
-      code,
-      state: "expired",
-      message: payload?.message || "套餐已过期",
-      raw: cloneData(payload)
-    };
-  }
-
-  if (code === -2) {
-    return {
-      ok: false,
-      code,
-      state: "unauthorized",
-      message: payload?.message || "Cookie 失效或无权限",
-      raw: cloneData(payload)
-    };
-  }
-
-  return {
-    ok: false,
-    code,
-    state: "error",
-    message: payload?.message || "状态获取失败",
-    raw: cloneData(payload)
-  };
-}
-
-function summarizeCheckinPayload(payload) {
-  const code = Number(payload?.code ?? -999);
-  const message = String(payload?.message || "");
-
-  if (code === 0) {
-    return {
-      ok: true,
-      already: false,
-      code,
-      message: message || "签到成功",
-      points: payload?.points ?? null,
-      raw: cloneData(payload)
-    };
-  }
-
-  if (isAlreadyCheckedInMessage(message)) {
-    return {
-      ok: true,
-      already: true,
-      code,
-      message: message || "今天可能已经签过了",
-      points: payload?.points ?? null,
-      raw: cloneData(payload)
-    };
-  }
-
-  if (code === -2) {
-    return {
-      ok: false,
-      already: false,
-      code,
-      message: "Cookie 失效或无权限",
-      points: payload?.points ?? null,
-      raw: cloneData(payload)
-    };
-  }
-
-  if (code === 4 && payload?.reason === "device-mismatch") {
-    return {
-      ok: false,
-      already: false,
-      code,
-      reason: payload.reason,
-      loginDevice: payload.loginDevice || null,
-      currentDevice: payload.currentDevice || null,
-      message: message || "签到设备与登录设备不一致",
-      points: payload?.points ?? null,
-      raw: cloneData(payload)
-    };
-  }
-
-  return {
-    ok: false,
-    already: false,
-    code,
-    message: message || "签到失败",
-    points: payload?.points ?? null,
-    raw: cloneData(payload)
-  };
-}
-
-async function refreshAccountStatus(account) {
-  const now = formatIso();
-  let status;
-
-  try {
-    const payload = await gladosApiRequest(account, "GET", "user/status");
-    status = summarizeStatusPayload(payload);
-  } catch (error) {
-    status = {
-      ok: false,
-      code: null,
-      state: "error",
-      message: error.message,
-      raw: null
-    };
-  }
-
-  return {
-    ...account,
-    updatedAt: now,
-    lastStatusAt: now,
-    lastStatus: status
-  };
-}
-
-async function attemptCheckin(account) {
-  try {
-    const host = new URL(normalizeBaseUrl(account.baseUrl)).hostname;
-    let userAgent = account.userAgent || gladosUserAgent(account.loginDevice);
-    let payload = await gladosApiRequest(account, "POST", "user/checkin", { token: host }, userAgent);
-
-    if (Number(payload?.code) === 4 && payload?.reason === "device-mismatch") {
-      const matchedAgent = gladosUserAgent(payload.loginDevice);
-      if (matchedAgent !== userAgent) {
-        payload = await gladosApiRequest(account, "POST", "user/checkin", { token: host }, matchedAgent);
-        userAgent = matchedAgent;
-      }
-    }
-
-    const result = summarizeCheckinPayload(payload);
-    result.userAgent = userAgent;
-    if (payload?.loginDevice) {
-      result.loginDevice = payload.loginDevice;
-    }
-    return result;
-  } catch (error) {
-    return {
-      ok: false,
-      already: false,
-      code: null,
-      message: error.message,
-      points: null,
-      raw: null
-    };
-  }
-}
-
-function shouldRetryCheckin(checkin, attemptNumber) {
-  if (attemptNumber >= CHECKIN_MAX_ATTEMPTS) {
-    return false;
-  }
-
-  if (checkin.ok) {
-    return false;
-  }
-
-  if (checkin.code === -2 || checkin.code === 4) {
-    return false;
-  }
-
-  return true;
-}
-
-async function runAccountCheckin(account) {
-  const now = formatIso();
-  let nextAccount = { ...account };
-  let checkin = null;
-  const attempts = [];
-
-  for (let attemptNumber = 1; attemptNumber <= CHECKIN_MAX_ATTEMPTS; attemptNumber += 1) {
-    checkin = await attemptCheckin(account);
-    attempts.push({
-      attempt: attemptNumber,
-      ok: checkin.ok,
-      already: checkin.already,
-      code: checkin.code,
-      message: checkin.message,
-      at: formatIso()
-    });
-
-    if (!shouldRetryCheckin(checkin, attemptNumber)) {
-      break;
-    }
-
-    console.warn(
-      `[glados-checkin] retry scheduled for ${account.name} (${attemptNumber}/${CHECKIN_MAX_ATTEMPTS}) after failure: ${checkin.message}`
-    );
-    if (CHECKIN_RETRY_DELAY_MS > 0) {
-      await sleep(CHECKIN_RETRY_DELAY_MS);
-    }
-  }
-
-  checkin = {
-    ...checkin,
-    attemptCount: attempts.length,
-    maxAttempts: CHECKIN_MAX_ATTEMPTS,
-    retryCount: Math.max(0, attempts.length - 1),
-    attempts
-  };
-  nextAccount.lastCheckinAt = now;
-  nextAccount.lastCheckin = checkin;
-  nextAccount.updatedAt = now;
-  if (checkin.userAgent) {
-    nextAccount.userAgent = checkin.userAgent;
-  }
-  if (checkin.loginDevice) {
-    nextAccount.loginDevice = checkin.loginDevice;
-  }
-
-  if (checkin.ok) {
-    nextAccount = await refreshAccountStatus(nextAccount);
-  } else if (checkin.code === -2) {
-    nextAccount.lastStatusAt = now;
-    nextAccount.lastStatus = {
-      ok: false,
-      code: -2,
-      state: "unauthorized",
-      message: "Cookie 失效或无权限",
-      raw: null
-    };
-  } else {
-    nextAccount = await refreshAccountStatus(nextAccount);
-  }
-
-  return nextAccount;
-}
-
-function readStoredTelegramChatId() {
-  try {
-    return fs.readFileSync(TELEGRAM_CHAT_ID_FILE, "utf8").trim();
-  } catch (error) {
-    return "";
-  }
-}
-
-function storeTelegramChatId(chatId) {
-  if (!chatId) {
-    return;
-  }
-
-  ensureDataDir();
-  fs.writeFileSync(TELEGRAM_CHAT_ID_FILE, `${chatId}\n`);
-}
-
-async function telegramApi(method, payload = null) {
-  if (!TELEGRAM_BOT_TOKEN) {
-    throw new Error("未配置 TELEGRAM_BOT_TOKEN");
-  }
-
-  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`;
-  const options = {
-    method: payload ? "POST" : "GET",
-    headers: payload ? { "Content-Type": "application/json" } : {},
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  };
-
-  if (payload) {
-    options.body = JSON.stringify(payload);
-  }
-
-  const response = await fetch(url, options);
-  const text = await response.text();
-  let data;
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch (error) {
-    throw new Error(`Telegram 返回异常: ${text.slice(0, 180)}`);
-  }
-
-  if (!response.ok || !data.ok) {
-    throw new Error(`Telegram API 失败: ${data.description || text.slice(0, 180)}`);
-  }
-
-  return data.result;
-}
-
-async function resolveTelegramChatId() {
-  if (TELEGRAM_CHAT_ID) {
-    return TELEGRAM_CHAT_ID;
-  }
-
-  const stored = readStoredTelegramChatId();
-  if (stored) {
-    return stored;
-  }
-
-  const updates = await telegramApi("getUpdates");
-  const latest = [...updates]
-    .reverse()
-    .map((item) => item.message || item.edited_message || item.channel_post || item.callback_query?.message || null)
-    .find((message) => message?.chat?.id != null);
-
-  const chatId = latest?.chat?.id != null ? String(latest.chat.id) : "";
-  if (chatId) {
-    storeTelegramChatId(chatId);
-  }
-  return chatId;
-}
-
-function splitTelegramText(text, limit = 3500) {
-  const chunks = [];
-  let remaining = text;
-  while (remaining.length > limit) {
-    let index = remaining.lastIndexOf("\n", limit);
-    if (index < 0 || index < limit / 2) {
-      index = limit;
-    }
-    chunks.push(remaining.slice(0, index));
-    remaining = remaining.slice(index).replace(/^\n+/, "");
-  }
-  if (remaining) {
-    chunks.push(remaining);
-  }
-  return chunks;
-}
-
-async function sendTelegramReport(text) {
-  if (TELEGRAM_DRY_RUN) {
-    console.log("[telegram dry run]");
-    console.log(text);
-    return "dry-run";
-  }
-
-  const chatId = await resolveTelegramChatId();
-  if (!chatId) {
-    throw new Error("无法确定 Telegram chat_id。请先给机器人发送一条消息，或在 .env 中设置 TELEGRAM_CHAT_ID。");
-  }
-
-  for (const chunk of splitTelegramText(text)) {
-    await telegramApi("sendMessage", {
-      chat_id: chatId,
-      text: chunk,
-      disable_web_page_preview: true
-    });
-  }
-
-  return chatId;
-}
 
 function buildReport(results, sentAt) {
+  const cfg = getDailyConfig();
   const success = results.filter((item) => item.lastCheckin?.ok && !item.lastCheckin?.already).length;
   const already = results.filter((item) => item.lastCheckin?.already).length;
   const failed = results.filter((item) => !item.lastCheckin?.ok).length;
@@ -577,7 +25,7 @@ function buildReport(results, sentAt) {
     `今日已签: ${already}`,
     `签到失败: ${failed}`,
     `当前状态正常: ${active}`,
-    `失败重试: 最多 ${CHECKIN_MAX_ATTEMPTS} 次，间隔 ${CHECKIN_RETRY_DELAY_MS} ms`,
+    `失败重试: 最多 ${cfg.maxAttempts} 次，间隔 ${cfg.retryDelayMs} ms`,
     ""
   ];
 
@@ -598,7 +46,7 @@ function buildReport(results, sentAt) {
 
     lines.push(`${index + 1}. ${account.name}`);
     lines.push(`签到: ${checkinLabel}`);
-    lines.push(`尝试次数: ${checkin?.attemptCount ?? 0}/${checkin?.maxAttempts ?? CHECKIN_MAX_ATTEMPTS}`);
+    lines.push(`尝试次数: ${checkin?.attemptCount ?? 0}/${checkin?.maxAttempts ?? cfg.maxAttempts}`);
     lines.push(`状态: ${statusLabel}`);
     lines.push(
       `剩余天数: ${status?.leftDays ?? "--"} | VIP: ${status?.vip ?? "--"} | Level: ${status?.level ?? "--"}`
@@ -611,6 +59,7 @@ function buildReport(results, sentAt) {
 }
 
 function buildFailureAlert(results, sentAt) {
+  const cfg = getDailyConfig();
   const failedAccounts = results.filter((item) => !item.lastCheckin?.ok);
   if (!failedAccounts.length) {
     return "";
@@ -620,7 +69,7 @@ function buildFailureAlert(results, sentAt) {
     "GLaDOS 签到失败告警",
     `北京时间: ${formatBeijing(sentAt)}`,
     `失败账号: ${failedAccounts.length}/${results.length}`,
-    `已启用重试: 最多 ${CHECKIN_MAX_ATTEMPTS} 次，间隔 ${CHECKIN_RETRY_DELAY_MS} ms`,
+    `已启用重试: 最多 ${cfg.maxAttempts} 次，间隔 ${cfg.retryDelayMs} ms`,
     ""
   ];
 
@@ -629,7 +78,7 @@ function buildFailureAlert(results, sentAt) {
     const status = account.lastStatus;
     lines.push(`${index + 1}. ${account.name}`);
     lines.push(`最终错误: ${checkin?.message || "未知错误"}`);
-    lines.push(`尝试次数: ${checkin?.attemptCount ?? 0}/${checkin?.maxAttempts ?? CHECKIN_MAX_ATTEMPTS}`);
+    lines.push(`尝试次数: ${checkin?.attemptCount ?? 0}/${checkin?.maxAttempts ?? cfg.maxAttempts}`);
     lines.push(`状态: ${status?.state ?? "unknown"} | ${status?.message || "未获取状态"}`);
 
     if (Array.isArray(checkin?.attempts) && checkin.attempts.length > 0) {
@@ -646,47 +95,14 @@ function buildFailureAlert(results, sentAt) {
 }
 
 async function main() {
-  const startedAt = new Date();
-  const accounts = readAccounts();
-
-  if (!accounts.length) {
-    const report = [
-      "每日签到报告",
-      `北京时间: ${formatBeijing(startedAt)}`,
-      "没有可签到的账号记录。"
-    ].join("\n");
-
-    if (TELEGRAM_BOT_TOKEN) {
-      await sendTelegramReport(report);
-    }
-    console.log(report);
-    return;
-  }
-
-  const nextAccounts = [];
-  for (const account of accounts) {
-    nextAccounts.push(await runAccountCheckin(account));
-  }
-
-  writeAccounts(nextAccounts);
-
-  const allResults = nextAccounts;
-
-  const report = buildReport(allResults, startedAt);
-  console.log(report);
-
-  if (TELEGRAM_BOT_TOKEN) {
-    const chatId = await sendTelegramReport(report);
-    console.log(`Telegram 已发送到 chat_id=${chatId}`);
-
-    if (TELEGRAM_ALERT_ON_FAILURE) {
-      const failureAlert = buildFailureAlert(allResults, startedAt);
-      if (failureAlert) {
-        await sendTelegramReport(failureAlert);
-        console.log("Telegram 失败告警已发送");
-      }
-    }
-  }
+  await runDailyJob({
+    title: "每日签到报告",
+    accounts: readProviderAccounts("glados"),
+    writeAccounts: (accounts) => writeProviderAccounts("glados", accounts),
+    runOne: (account) => runWithRetries("glados-checkin", account, (item) => glados.runAccountCheckin(item), { shouldRetry: glados.shouldRetryCheckin }),
+    buildReport,
+    buildFailureAlert
+  });
 }
 
 main().catch((error) => {

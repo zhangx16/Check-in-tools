@@ -27,6 +27,7 @@ Optional timers:
 
 - `embypulse-checkin-daily.timer`
 - `embymb-checkin-daily.timer`
-- `zhousanwan-checkin-daily.timer`
 - `embykeeper-checkin-daily.timer`
 - `telegram-bot-checkin-daily.timer`
+
+VPSNAT 每日签到使用 `vpsnat-checkin-daily.service` / `.timer`，北京时间 10:13 执行。部署时调整服务中的项目路径。

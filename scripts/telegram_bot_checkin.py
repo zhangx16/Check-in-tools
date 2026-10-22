@@ -4,6 +4,7 @@ import asyncio
 import http.cookiejar
 import json
 import os
+import re
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -16,6 +17,7 @@ from pyrogram.types import Message
 
 from embykeeper.telegram.pyrogram import Client
 from embykeeper.telegram.session import API_ID, API_HASH
+from telegram_bot_renewal import run_renewal
 
 PROJECT_ROOT = Path(os.environ.get("CHECKIN_PROJECT_ROOT", Path(__file__).resolve().parents[1])).resolve()
 DATA_DIR = PROJECT_ROOT / "data"
@@ -23,7 +25,7 @@ FORM_FILE = DATA_DIR / "embykeeper" / "form.json"
 CACHE_FILE = DATA_DIR / "embykeeper" / "runtime" / "cache.json"
 SKIP_CACHE_FILE = DATA_DIR / "telegram_bot_checkin_skip.json"
 RESULTS_FILE = DATA_DIR / "telegram_bot_checkin_results.json"
-REQUEST_TIMEOUT = 5
+REQUEST_TIMEOUT = 20
 MESSAGE_TIME_SLOP = timedelta(seconds=2)
 DEFAULT_BUTTON_HINTS = [
     "签到", "簽到", "打卡", "领取", "我不是机器人", "不是机器人", "点击签到", "立即签到"
@@ -41,6 +43,9 @@ MENU_SIGNIN_BUTTONS = {
     "shrekpublic_bot": "🎯 签到",
     "tbagemby_bot": "🎯 签到",
     "chapanda3_bot": "🎯 签到",
+    "micu_user_bot": "🎯 签到",
+    "wybtcok_bot": "✅ 每日签到",
+    "lewa_user_bot": "📅 每日签到",
 }
 MOONKK_WEBAPP_HOST = "embyguard.com"
 ZZMEB_SIGNIN_BUTTON = "🎯 签到"
@@ -166,6 +171,8 @@ def save_checkin_results(results: list[dict], merge_existing: bool = False):
                 "checkedAt": now
             }
             record["accounts"].append(item)
+            if bot_result.get("renewal"):
+                item["renewal"] = bot_result["renewal"]
             if not item["ok"] and not item["skipped"]:
                 record["ok"] = False
 
@@ -261,6 +268,42 @@ def format_result_line(phone: str, bot_name: str, result: dict):
         else "失败"
     )
     return f"- {phone} · {bot_name}: {label} · {result.get('message', '')}"
+
+
+def compact_message(message, limit=90):
+    text = " ".join(str(message or "未知原因").split())
+    if "只有已配置 Telegram 群组" in text:
+        return "需加入指定群组"
+    if "使用本机器人需要满足以下条件" in text:
+        return "需加入指定群组并关注频道，发送 /check 验证"
+    if "请先点击下面加入我们的群组和频道" in text:
+        return "需加入群组和频道，再发送 /start 验证"
+    if "无权签到" in text:
+        return "无签到权限"
+    return text if len(text) <= limit else text[:limit] + "…"
+
+
+def build_compact_report(results):
+    lines = ["TG Bot 签到汇总"]
+    for account in results:
+        items = account.get("bots", [])
+        lines.append(f"\n账号 ···{account['phone'][-4:]}")
+        if not items:
+            lines.append(compact_message(account.get("message", "无签到任务")))
+            continue
+        skipped = sum(bool(item.get("skipped")) for item in items)
+        success = sum(bool(item.get("ok")) and not item.get("already") and not item.get("skipped") for item in items)
+        already = sum(bool(item.get("ok")) and bool(item.get("already")) and not item.get("skipped") for item in items)
+        failed = len(items) - skipped - success - already
+        lines.append(f"成功 {success} · 已签 {already} · 失败 {failed} · 跳过 {skipped}")
+        for item in items:
+            if item.get("skipped") or not item.get("ok"):
+                icon = "⏭" if item.get("skipped") else "❌"
+                lines.append(f"{icon} {item['name']}｜{compact_message(item.get('message'))}")
+            renewal = item.get("renewal")
+            if renewal and renewal.get("status") != "skipped":
+                lines.append(f"续费 · {item['name']}｜{compact_message(renewal.get('message'))}")
+    return "\n".join(lines)
 
 
 def format_result_label(result: dict):
@@ -401,6 +444,53 @@ def evaluate_incoming_message(message: Message, bot: dict):
     )
 
 
+def gymeow_button_texts(message: Message) -> list[str]:
+    texts = []
+    if message.reply_markup and getattr(message.reply_markup, "inline_keyboard", None):
+        for row in message.reply_markup.inline_keyboard:
+            texts.extend([str(btn.text or "").strip() for btn in row if str(btn.text or "").strip()])
+    return texts
+
+
+async def gymeow_recent_success(client: Client, target: str, bot: dict):
+    today = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d")
+    beijing_today = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
+    async for message in client.get_chat_history(target, limit=12):
+        if message.outgoing:
+            continue
+        result = evaluate_incoming_message(message, bot)
+        if not result or not result.get("ok"):
+            continue
+        text = message.text or message.caption or ""
+        if beijing_today in text or today in text or result.get("already"):
+            return {**result, "already": True}
+        return {**result, "already": True}
+    return None
+
+
+async def scan_gymeow_state(client: Client, target: str, bot: dict, start_time):
+    menu_message = None
+    verify_message = None
+    evaluated = None
+    async for message in client.get_chat_history(target, limit=10):
+        if message.outgoing:
+            continue
+        if message.date and message.date.replace(tzinfo=timezone.utc) < start_time:
+            continue
+        message_text = message.text or message.caption or ""
+        result = evaluate_incoming_message(message, bot)
+        if result and (result.get("ok") or result.get("skipped")):
+            evaluated = result
+            break
+        if GYMEOW_VERIFY_HINT in message_text:
+            verify_message = message
+            break
+        if GYMEOW_SIGNIN_BUTTON in gymeow_button_texts(message):
+            menu_message = message
+            break
+    return evaluated, menu_message, verify_message
+
+
 async def run_gymeow_checkin(client: Client, bot: dict):
     target = bot["botUsername"]
     start_time = datetime.now(timezone.utc) - MESSAGE_TIME_SLOP
@@ -410,68 +500,56 @@ async def run_gymeow_checkin(client: Client, bot: dict):
 
     menu_message = None
     verify_message = None
-    for _ in range(6):
-        async for message in client.get_chat_history(target, limit=8):
-            if message.outgoing:
-                continue
-            if message.date and message.date.replace(tzinfo=timezone.utc) < start_time:
-                continue
-            message_text = message.text or message.caption or ""
-            if GYMEOW_VERIFY_HINT in message_text:
-                verify_message = message
-                break
-            texts = []
-            if message.reply_markup and getattr(message.reply_markup, "inline_keyboard", None):
-                for row in message.reply_markup.inline_keyboard:
-                    texts.extend([str(btn.text or "").strip() for btn in row])
-            if GYMEOW_SIGNIN_BUTTON in texts:
-                menu_message = message
-                break
-        if menu_message or verify_message:
+    evaluated = None
+    for _ in range(8):
+        evaluated, menu_message, verify_message = await scan_gymeow_state(client, target, bot, start_time)
+        if evaluated or menu_message or verify_message:
             break
         await asyncio.sleep(1)
 
+    if evaluated:
+        return evaluated
+
     if menu_message and not verify_message:
         try:
-            await asyncio.wait_for(menu_message.click(GYMEOW_SIGNIN_BUTTON, timeout=1), timeout=2)
+            click_result = await asyncio.wait_for(menu_message.click(GYMEOW_SIGNIN_BUTTON, timeout=1), timeout=2)
+            click_answer = str(getattr(click_result, "message", "") or "").strip()
+            clicked = evaluate_message(click_answer, bot) if click_answer else None
+            if clicked:
+                return clicked
         except Exception:
             pass
-        for _ in range(8):
-            async for message in client.get_chat_history(target, limit=10):
-                if message.outgoing:
-                    continue
-                if message.date and message.date.replace(tzinfo=timezone.utc) < start_time:
-                    continue
-                message_text = message.text or message.caption or ""
-                if GYMEOW_VERIFY_HINT in message_text:
-                    verify_message = message
-                    break
-            if verify_message:
+        for _ in range(10):
+            evaluated, _, verify_message = await scan_gymeow_state(client, target, bot, start_time)
+            if evaluated or verify_message:
                 break
             await asyncio.sleep(1)
+        if evaluated:
+            return evaluated
+        recent = await gymeow_recent_success(client, target, bot)
+        if recent:
+            return recent
 
     if not verify_message:
+        recent = await gymeow_recent_success(client, target, bot)
+        if recent:
+            return recent
         return {"ok": False, "already": False, "skipped": False, "message": "未找到签到菜单或验证卡片"}
 
     try:
         verify_result = await asyncio.wait_for(verify_message.click(GYMEOW_VERIFY_BUTTON, timeout=3), timeout=5)
         verify_answer = str(getattr(verify_result, "message", "") or "").strip()
         if verify_answer:
-            evaluated = evaluate_message(verify_answer, bot)
-            if evaluated:
-                return evaluated
+            clicked = evaluate_message(verify_answer, bot)
+            if clicked:
+                return clicked
     except Exception:
         pass
 
     for _ in range(8):
-        async for message in client.get_chat_history(target, limit=10):
-            if message.outgoing:
-                continue
-            if message.date and message.date.replace(tzinfo=timezone.utc) < start_time:
-                continue
-            result = evaluate_incoming_message(message, bot)
-            if result:
-                return result
+        evaluated, _, _ = await scan_gymeow_state(client, target, bot, start_time)
+        if evaluated:
+            return evaluated
         await asyncio.sleep(1)
 
     return {"ok": False, "already": False, "skipped": False, "message": "等待 Bot 回复超时"}
@@ -522,6 +600,10 @@ async def run_maikeer_checkin(client: Client, bot: dict):
 
 async def run_menu_signin_checkin(client: Client, bot: dict, signin_button: str):
     target = bot["botUsername"]
+    if target.lower() == "lewa_user_bot":
+        bot = {**bot,
+               "successKeywords": ["签到成功", "打卡成功"],
+               "checkedKeywords": ["今日已签到", "今天已签到", "今天已经签到", "今日已经签到", "已经签到过", "今日已签", "今天已签"]}
     start_time = datetime.now(timezone.utc) - MESSAGE_TIME_SLOP
 
     await client.send_message(target, "/start")
@@ -531,11 +613,13 @@ async def run_menu_signin_checkin(client: Client, bot: dict, signin_button: str)
         async for message in client.get_chat_history(target, limit=8):
             if message.outgoing:
                 continue
-            if message.date and message.date.replace(tzinfo=timezone.utc) < start_time:
+            message_time = message.edit_date or message.date
+            stale = message_time and message_time.replace(tzinfo=timezone.utc) < start_time
+            if stale and target.lower() != "lewa_user_bot":
                 continue
 
             message_text = message.text or message.caption or ""
-            result = evaluate_incoming_message(message, bot)
+            result = None if stale else evaluate_incoming_message(message, bot)
             if result:
                 return result
 
@@ -556,17 +640,45 @@ async def run_menu_signin_checkin(client: Client, bot: dict, signin_button: str)
             except Exception:
                 pass
 
-            for _ in range(8):
+            answered_challenges = set()
+            for _ in range(20 if target.lower() == "micu_user_bot" else 8):
                 async for followup in client.get_chat_history(target, limit=10):
                     if followup.outgoing:
                         continue
-                    if followup.date and followup.date.replace(tzinfo=timezone.utc) < start_time:
+                    followup_time = followup.edit_date or followup.date
+                    if followup_time and followup_time.replace(tzinfo=timezone.utc) < start_time:
                         continue
+                    if target.lower() == "micu_user_bot":
+                        challenge = micu_arithmetic_answer(followup)
+                        if challenge:
+                            button_text, expression = challenge
+                            challenge_key = (followup.id, expression)
+                            if challenge_key not in answered_challenges:
+                                answered_challenges.add(challenge_key)
+                                try:
+                                    answer_result = await asyncio.wait_for(
+                                        followup.click(button_text, timeout=5), timeout=8
+                                    )
+                                    evaluated = evaluate_message(
+                                        str(getattr(answer_result, "message", "") or ""), bot
+                                    )
+                                    if evaluated:
+                                        return evaluated
+                                except Exception:
+                                    pass
+                            continue
                     followup_result = evaluate_incoming_message(followup, bot)
                     if followup_result:
                         return followup_result
                 await asyncio.sleep(1)
 
+            if target.lower() in {"micu_user_bot", "wybtcok_bot", "lewa_user_bot"}:
+                return {
+                    "ok": False,
+                    "already": False,
+                    "skipped": False,
+                    "message": "签到按钮已点击，但未收到签到成功回复"
+                }
             return {
                 "ok": True,
                 "already": False,
@@ -576,6 +688,24 @@ async def run_menu_signin_checkin(client: Client, bot: dict, signin_button: str)
         await asyncio.sleep(1)
 
     return {"ok": False, "already": False, "skipped": False, "message": "未找到签到按钮"}
+
+
+def micu_arithmetic_answer(message: Message):
+    text = message.text or message.caption or ""
+    if "请完成下面这道题后签到" not in text:
+        return None
+    match = re.search(r"(?<!\d)(-?\d+)\s*([+\-−－＋])\s*(-?\d+)\s*=\s*[?？]", text)
+    if not match:
+        return None
+    left, operator, right = match.groups()
+    answer = int(left) + int(right) if operator in ("+", "＋") else int(left) - int(right)
+    keyboard = getattr(message.reply_markup, "inline_keyboard", None) or []
+    for row in keyboard:
+        for button in row:
+            label = str(button.text or "").strip()
+            if label == str(answer) and button.callback_data == f"checkin_answer:{answer}":
+                return label, match.group(0)
+    return None
 
 
 def extract_webapp_init_data(url: str) -> str:
@@ -1176,6 +1306,14 @@ async def run_account(account: dict, bots: list[dict], session_map: dict[str, st
                     set_skip_reason(skip_cache, phone, bot["botUsername"], reason)
             elif result.get("ok"):
                 clear_skip_reason(skip_cache, phone, bot["botUsername"])
+            if bot["botUsername"].lower() == "okemby_bot" and result.get("ok") and not result.get("skipped"):
+                try:
+                    renewal = await run_renewal(client, bot, DATA_DIR)
+                except Exception as error:
+                    renewal = {"status": "error", "message": str(error)}
+                result["renewal"] = renewal
+                result["message"] = f"{result.get('message', '')}\n自动续费：{renewal['message']}"
+                print(f"[{phone}] {bot['name']} 自动续费 -> {renewal['status']}: {renewal['message']}", flush=True)
             bot_results.append({
                 "botUsername": bot["botUsername"],
                 "name": bot["name"],
@@ -1216,10 +1354,30 @@ async def main():
         print("没有启用的 Telegram 签到账号")
         return 1
 
-    results = await asyncio.gather(*[
+    outcomes = await asyncio.gather(*[
         run_account(account, bots, session_map, skip_cache)
         for account in enabled_accounts
-    ])
+    ], return_exceptions=True)
+    results = []
+    for account, outcome in zip(enabled_accounts, outcomes):
+        if isinstance(outcome, BaseException):
+            error_name = type(outcome).__name__
+            message = f"Telegram 账号执行失败（{error_name}）"
+            if error_name in {"AuthKeyUnregistered", "SessionRevoked", "SessionExpired", "Unauthorized"}:
+                message = f"Telegram 登录凭证已失效（{error_name}），请重新登录此账号"
+            print(f"[{account['phone']}] {message}", flush=True)
+            outcome = {
+                "phone": account["phone"],
+                "ok": False,
+                "message": message,
+                "bots": [
+                    {"botUsername": bot["botUsername"], "name": bot["name"],
+                     "ok": False, "already": False, "skipped": False, "message": message}
+                    for bot in bots
+                    if not bot.get("targetPhones") or account["phone"] in bot["targetPhones"]
+                ]
+            }
+        results.append(outcome)
     save_skip_cache(skip_cache)
     save_checkin_results(results, merge_existing=bool(selected_bots))
 
@@ -1238,7 +1396,7 @@ async def main():
             if not bot_result.get("ok") and not bot_result.get("skipped"):
                 failed = True
 
-    print("\n".join(lines))
+    print(build_compact_report(results))
     return 1 if failed else 0
 
 

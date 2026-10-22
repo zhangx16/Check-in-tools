@@ -11,9 +11,10 @@ Expected runtime files include:
 - `accounts.json`
 - `embypulse_accounts.json`
 - `embymb_accounts.json`
-- `zhousanwan_accounts.json`
 - `telegram-chat-id.txt`
 - `telegram_bot_checkin_skip.json`
 - `embykeeper/config.toml`
 - `embykeeper/form.json`
 - `embykeeper/runtime/*`
+
+- `vpsnat_accounts.json`：VPSNAT 账号及私有会话令牌、签到结果。

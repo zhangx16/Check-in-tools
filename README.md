@@ -1,13 +1,13 @@
 # Emby Check-in Tools
 
-多站点与 Telegram Bot 自动签到。本仓库不提供网页面板，签到靠脚本和定时任务，状态通过 API 读取。
+多站点与 Telegram Bot 自动签到。签到由脚本和定时任务执行，可通过网页工作台或 API 查看结果。
 
 当前支持：
 
 - GLaDOS Cookie 签到
 - EmbyPulse 账号密码签到
 - EmbyMB 账号密码签到
-- 周三晚账号密码签到
+- 这只猫用户中心（`https://user.090911.xyz`）Cookie 签到
 - 癫影（`@madowchat_bot`）Telegram `/lqd` 运气签到
 - Telegram Bot 签到
 - 自动签到脚本和 Telegram 汇报
@@ -19,6 +19,19 @@
 - 可选 Telegram 汇报
 - 可选 systemd timer 定时任务
 - 只读 Summary API，供客户端拉取结果
+- 网页签到总览：项目统计、搜索、状态筛选、账号详情、深浅主题与手机布局
+
+## 网页工作台
+
+访问 `/` 或 `/dashboard/`，使用 `.env` 中的 `ADMIN_USER` / `ADMIN_PASS` 登录。
+本机访问地址为 `https://ci.031216.xyz`。页面通过已认证的 `GET /api/v1/dashboard` 读取项目数据，
+展示网站与全部已配置的 Telegram Bot；尚无执行记录的 Bot 显示「暂无记录」。
+「刷新状态」只重新读取结果，不会触发签到。历史记录会标明日期，不计作今日签到。
+项目详情底部提供「修改名称」，可设置最多 60 字的显示名称，或恢复默认；自定义名称保存在 `data/project_names.json`，不改变账号与签到行为。
+项目详情底部提供「删除项目」，确认后移除本地签到配置与记录：网站项目会删除该站点全部账号；Telegram 项目仅移除对应机器人，保留 Telegram 登录账号。
+
+页面参考 shadcn/ui `dashboard-01`，来源与设计约定见 `design/checkin-dashboard/design-contract.md`。
+该目录同时保留可离线打开的设计稿；运行 `python3 design/checkin-dashboard/refresh-snapshot.py` 更新脱敏快照。
 
 ## 环境要求
 
@@ -29,8 +42,8 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/zhangx16/emby-checkin.git
-cd emby-checkin
+git clone https://github.com/zhangx16/Check-in-tools.git
+cd Check-in-tools
 cp .env.example .env
 ```
 
@@ -93,7 +106,6 @@ ADMIN_PASS=change-this-password
 SESSION_SECRET=replace-with-a-long-random-string
 DEFAULT_EMBYPULSE_BASE_URL=https://embypulse.example.com
 DEFAULT_EMBYMB_BASE_URL=https://embymb.ichinosekotomi.com
-DEFAULT_ZHOUSANWAN_BASE_URL=https://zhousanwan.xyz
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
 TELEGRAM_DRY_RUN=false
@@ -108,7 +120,6 @@ TELEGRAM_ALERT_ON_FAILURE=true
 GLADOS_ACCOUNTS_FILE=
 EMBYPULSE_ACCOUNTS_FILE=
 EMBYMB_ACCOUNTS_FILE=
-ZHOUSANWAN_ACCOUNTS_FILE=
 CHECKIN_PROJECT_ROOT=
 ```
 
@@ -146,15 +157,34 @@ EmbyMB：
 node scripts/embymb_daily_checkin.js
 ```
 
-周三晚：
-
-```bash
-node scripts/zhousanwan_daily_checkin.js
-```
-
 如果配置了 `TELEGRAM_BOT_TOKEN`，脚本会发送签到汇报。没有固定 `TELEGRAM_CHAT_ID` 时，脚本会尝试从 Bot 最近消息中识别并写入 `data/telegram-chat-id.txt`。
 
 ## Telegram Bot 签到
+
+本机已添加 `@mdlrtgy_bot`、`@Freshippo_bot`、`@fengyuegeBOt`、`@bb_emby_bot` 的签到模板。
+模板发送 `/start`，使用通用 worker 查找签到/打卡按钮，仅以明确的签到成功或今日已签回复确认完成。
+已联网验证：MDL 通过「用户配置 → 每日签到」确认今日已签；Freshippo 确认今日已签；风月阁和步兵营收到签到成功回复。
+MDL 需要先绑定账号，本机仅对已绑定账号执行；其他 Bot 未满足群组要求或没有签到权限时跳过。
+可复用配置见 `templates/telegram_bot_templates.json`，将所需条目合并到 `data/embykeeper/form.json` 的 `botTemplates` 中。
+`targetPhones` 为空时对所有启用签到的 Telegram 账号执行，可填写手机号限制执行账号。
+仅运行这四个 Bot：
+
+```bash
+CHECKIN_BOT_USERNAMES=mdlrtgy_bot,Freshippo_bot,fengyuegeBOt,bb_emby_bot scripts/telegram_bot_checkin_once.sh
+```
+
+Lewa（`@Lewa_user_bot`）签到后检查「积分商城」余额，达到 3000 积分时兑换一张月卡。
+OkEmby（`@okemby_bot`）签到后走「用户功能 → 兑换商店 → 续期可用天数」，满 60 OK 币时按菜单汇率计算可兑换天数并输入。
+OkEmby 每次成功续费后至少间隔七天；Lewa 每天最多自动兑换一张月卡。沿用各 Bot 的 `targetPhones` 账号范围。
+兑换记录保存在 `data/telegram_renewals/`，提交前记账；结果不明确时暂停重复兑换，需核对后处理记录。
+
+宸澄 Ccbot（`@wybtcok_bot`）发送 `/start`，点击「✅ 每日签到」，等待明确签到成功或今日已签回复。
+未满足频道关注和群聊加入要求时跳过。
+
+MICU Cloud Media（`@micu_user_bot`）发送 `/start` 打开菜单，点击「🎯 签到」。
+遇到加减法数字题时，worker 计算结果并点击对应答案按钮；答错重新出题时会处理新题。
+以「签到成功」确认完成，以「您今天已经签到过了」等明确回复判断今日已签；支持会员米币奖励。
+在 `data/embykeeper/form.json` 添加同名模板，`targetPhones` 为空时对所有启用的 Telegram 签到账号执行。
 
 Telegram Bot 签到依赖 `embykeeper` 和本地 Python 虚拟环境。一个常见安装方式：
 
@@ -243,3 +273,23 @@ npm run check
 ## 免责声明
 
 本项目只提供自托管账号管理和签到自动化工具。请遵守相关站点的服务条款，并自行保护账号 Cookie、密码和 Telegram 凭据。
+
+### VPSNAT 纳泰云签到
+
+新增 provider `vpsnat`，默认站点 https://www.vpsnat.com。账号保存在 Git 忽略的 `data/vpsnat_accounts.json`，支持用户名密码及浏览器会话 `token`、`refreshToken`。启用 Turnstile 的站点需要先在浏览器完成登录，再从 Local Storage 导入这两个值（可通过现有账号创建/更新 API 提交）。会话过期时自动使用 refreshToken 续期并保存轮换后的令牌；失效后需重新导入。不要提交真实密码或令牌。
+
+签到请求仅领取每日奖励，记录积分和 CPU/内存/磁盘/流量资源奖励，不兑换资源。今日已签到时跳过；站点关闭签到或要求有效实例时明确报告原因。
+
+每日脚本：`node scripts/vpsnat_daily_checkin.js`。部署模板：`deploy/vpsnat-checkin-daily.service` 和 `.timer`，北京时间 10:13 运行，纳入 10:14 网站汇总。单独运行每日脚本沿用现有 Telegram 报告设置。
+
+## 这只猫用户中心签到
+
+账号保存在 `data/zzcat_accounts.json`，使用 Telegram 登录网站后获得的 `qp_session` Cookie。
+脚本先读取 `/api/miniapp/bootstrap/core` 的 `profile.checkedInToday`；未签时调用 `POST /api/user/checkin`，记录猫币奖励与余额。
+仅接受明确的 `awardedNow` 结果，重复运行已签时不发起签到 POST；若会话失效会明确报告需要重新登录，不自动操作 Telegram。
+
+```bash
+node scripts/zzcat_daily_checkin.js
+```
+
+本机定时任务为 `zzcat-checkin-daily.timer`，每天北京时间 10:15 执行。网站签到与 Telegram Bot 签到分别显示。

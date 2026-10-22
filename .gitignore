@@ -43,3 +43,10 @@ __pycache__/
 public/bot-avatars/
 
 public/site-icons/
+
+# Local design snapshots, screenshots, and review state
+design/checkin-dashboard/snapshot.js
+design/checkin-dashboard/*.png
+design/checkin-dashboard/qa-*.json
+design/checkin-dashboard/selection.json
+deploy/ci.*.conf

@@ -4,7 +4,8 @@
   "description": "Multi-site and Telegram bot check-in scripts with a read-only summary API",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check scripts/daily_checkin_report.js && node --check scripts/embypulse_daily_checkin.js && node --check scripts/embymb_daily_checkin.js && node --check scripts/zhousanwan_daily_checkin.js && node --check scripts/website_checkin_summary.js"
+    "check": "node --check server.js && node --check lib/common.js && node --check lib/accounts.js && node --check lib/telegram.js && node --check lib/daily.js && node --check lib/providers/index.js && node --check lib/providers/glados.js && node --check lib/providers/embypulse.js && node --check lib/providers/embymb.js && node --check lib/providers/vpsnat.js && node --check scripts/vpsnat_daily_checkin.js && node --check scripts/daily_checkin_report.js && node --check scripts/embypulse_daily_checkin.js && node --check scripts/embymb_daily_checkin.js && node --check scripts/website_checkin_summary.js && node --check lib/providers/zzcat.js && node --check scripts/zzcat_daily_checkin.js",
+    "test": "node --test tests/test_lib.js tests/test_vpsnat.js tests/test_dashboard_delete.js tests/test_glados.js tests/test_zzcat.js"
   },
   "engines": {
     "node": ">=18.0.0"
