@@ -15,9 +15,12 @@ from urllib.parse import parse_qs, urlparse
 from pyrogram import raw
 from pyrogram.types import Message
 
-from embykeeper.telegram.pyrogram import Client
-from embykeeper.telegram.session import API_ID, API_HASH
+from pyrogram import Client
+
+API_ID = os.environ.get("TELEGRAM_API_ID", "")
+API_HASH = os.environ.get("TELEGRAM_API_HASH", "")
 from telegram_bot_renewal import run_renewal
+from telegram_captcha import answer_captcha
 
 PROJECT_ROOT = Path(os.environ.get("CHECKIN_PROJECT_ROOT", Path(__file__).resolve().parents[1])).resolve()
 DATA_DIR = PROJECT_ROOT / "data"
@@ -115,6 +118,10 @@ def load_form():
         bots.append({
             "botUsername": bot_username,
             "name": str(item.get("name", "")).strip() or bot_username,
+            "requireExistingChat": bool(item.get("requireExistingChat", False)),
+            "useCaptcha": bool(item.get("useCaptcha", False)),
+            "captchaLengths": item.get("captchaLengths") or [],
+            "captchaPattern": str(item.get("captchaPattern") or ""),
             "commands": normalize_string_list(item.get("commands"), ["/checkin"]),
             "successKeywords": normalize_string_list(item.get("successKeywords"), ["签到成功", "今日已签到", "success"]),
             "checkedKeywords": normalize_string_list(item.get("checkedKeywords"), ["今日已签到", "今天已经签到过了"]),
@@ -140,8 +147,16 @@ def load_skip_cache():
     return data if isinstance(data, dict) else {}
 
 
+def write_json_atomic(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + f".{os.getpid()}.tmp")
+    temporary.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    temporary.chmod(0o600)
+    temporary.replace(path)
+
+
 def save_skip_cache(data):
-    SKIP_CACHE_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_json_atomic(SKIP_CACHE_FILE, data)
 
 
 def save_checkin_results(results: list[dict], merge_existing: bool = False):
@@ -201,7 +216,7 @@ def save_checkin_results(results: list[dict], merge_existing: bool = False):
             merged.update(by_bot)
             payload["bots"] = merged
 
-    RESULTS_FILE.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_json_atomic(RESULTS_FILE, payload)
 
 
 def is_account_status_reason(reason: str) -> bool:
@@ -1021,6 +1036,11 @@ async def run_garysclub_checkin(client: Client, bot: dict):
 
 
 async def run_single_bot(client: Client, bot: dict):
+    if bot.get("requireExistingChat"):
+        async for existing in client.get_chat_history(bot["botUsername"], limit=1):
+            break
+        else:
+            return {"ok": True, "already": False, "skipped": True, "message": "尚未与该 Bot 聊天，请先打开并注册"}
     target = bot["botUsername"]
     if target == "gymeowfly_bot":
         print(f"[{client.phone_number}] 开始签到 {bot['name']} (@{bot['botUsername']})", flush=True)
@@ -1118,9 +1138,11 @@ async def run_single_bot(client: Client, bot: dict):
     while asyncio.get_event_loop().time() < deadline:
         messages = []
         async for message in client.get_chat_history(target, limit=12):
-            if message.id in seen_ids:
+            message_key = (message.id, message.edit_date, message.text or message.caption or "")
+            if message_key in seen_ids:
                 continue
-            if message.date and message.date.replace(tzinfo=timezone.utc) < start_time:
+            message_time = message.edit_date or message.date
+            if message_time and message_time.replace(tzinfo=timezone.utc) < start_time:
                 continue
             if message.outgoing:
                 continue
@@ -1134,8 +1156,15 @@ async def run_single_bot(client: Client, bot: dict):
 
         messages.sort(key=lambda item: item.id)
         for message in messages:
-            seen_ids.add(message.id)
+            seen_ids.add((message.id, message.edit_date, message.text or message.caption or ""))
             message_text = message.text or message.caption or ""
+            if bot.get("requireExistingChat") and getattr(message, "photo", None):
+                try:
+                    if await answer_captcha(client, message, bot):
+                        continue
+                except Exception as error:
+                    return {"ok": False, "already": False, "skipped": False,
+                            "message": f"本地验证码识别失败（{type(error).__name__}）"}
             button_texts = []
             if message.reply_markup and getattr(message.reply_markup, "inline_keyboard", None):
                 for row in message.reply_markup.inline_keyboard:
@@ -1263,6 +1292,8 @@ async def run_account(account: dict, bots: list[dict], session_map: dict[str, st
             "bots": []
         }
 
+    if not (account["apiId"] or API_ID) or not (account["apiHash"] or API_HASH):
+        return {"phone": phone, "ok": False, "message": "缺少 Telegram API ID / Hash", "bots": []}
     api_id = int(account["apiId"] or API_ID)
     api_hash = account["apiHash"] or API_HASH
 

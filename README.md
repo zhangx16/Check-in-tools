@@ -36,7 +36,7 @@
 ## 环境要求
 
 - Node.js 18 或更高版本
-- 可选：Python 3.11+ 和 `embykeeper`，用于 Telegram Bot 签到
+- 可选：Python 3.11+ 和独立 Telegram 依赖，用于 Telegram Bot 签到
 - 可选：systemd 和 Nginx，用于服务器部署
 
 ## 快速开始
@@ -186,18 +186,18 @@ MICU Cloud Media（`@micu_user_bot`）发送 `/start` 打开菜单，点击「�
 以「签到成功」确认完成，以「您今天已经签到过了」等明确回复判断今日已签；支持会员米币奖励。
 在 `data/embykeeper/form.json` 添加同名模板，`targetPhones` 为空时对所有启用的 Telegram 签到账号执行。
 
-Telegram Bot 签到依赖 `embykeeper` 和本地 Python 虚拟环境。一个常见安装方式：
+Telegram Bot 签到使用本项目自己的 worker、Kurigram 客户端和本地 OCR，不安装或调用 Emby Keeper。为兼容历史部署，保留原虚拟环境与数据目录名称：
 
 ```bash
 python3 -m venv .venv-embykeeper
 . .venv-embykeeper/bin/activate
-pip install embykeeper
+pip install -r requirements-telegram.txt
 ```
 
 在 `data/embykeeper/form.json` 中填写 Telegram 账号和 Bot 模板后，可先在终端执行首次登录：
 
 ```bash
-scripts/embykeeper_run_once.sh
+scripts/telegram_relogin.py <手机号尾号>
 ```
 
 自定义 Telegram worker：
@@ -293,3 +293,49 @@ node scripts/zzcat_daily_checkin.js
 ```
 
 本机定时任务为 `zzcat-checkin-daily.timer`，每天北京时间 10:15 执行。网站签到与 Telegram Bot 签到分别显示。
+
+## Bot 签到目录（独立实现）
+
+参考 [Emby Keeper README](https://github.com/emby-keeper/emby-keeper/blob/main/README.md) 的签到模块元数据，
+整理命令、成功/已签关键词、菜单入口与验证码参数，使用本项目自己的 worker 执行；不安装、导入或调用 Emby Keeper。
+网页「添加机器人」可搜索并添加可独立适配的 Bot。目录包含 122 个非群聊模块，其中 85 个支持通用命令/菜单签到，
+37 个涉及专用交互或外部认证，明确标为尚未适配，不会按通用方案冒充支持。实际签到还取决于账号注册、群组要求及验证码。
+同一 Bot 用户名只添加一次；已有自定义流程优先保留。新增目录配置默认只对已有聊天会话的账号运行。
+
+- `templates/telegram_bot_catalog.json`：带来源和能力标记的静态目录。
+- `scripts/build_bot_catalog.py <上游源码中的checkiner目录>`：通过 AST 提取公开配置，不执行上游代码。
+- `scripts/import_bot_catalog.py`：只读扫描已启用账号的现有 Telegram 会话，添加匹配的可用 Bot，并写入 targetPhones。
+- `scripts/telegram_captcha.py`：验证码图片本地识别，校验答案字符和长度，不使用第三方 Auth Bot。
+- Telegram API ID / Hash 在本地 form 的账号项或 `TELEGRAM_API_ID` / `TELEGRAM_API_HASH` 中配置；原本机凭据已迁移。
+- 历史 `embykeeper_run_once.sh` 只是当前 worker 的兼容入口；每日只启用 `telegram-bot-checkin-daily.timer`，避免两套任务重复签到。
+
+## Emby 自动保活
+
+网页侧栏「Emby 自动保活」支持添加服务器地址、可选端口、账号密码、执行间隔（1–365 天）、
+每次随机观看范围（最短/最长均为 30–7200 秒）、客户端名称、设备名称、版本以及备注。默认客户端上报标识为 `SenPlayer / iPhone`，
+同一账号保持固定设备 ID；可以在配置中修改名称。密码保存在本机 `data/emby_keepalive_accounts.json`，权限 0600，接口不返回密码。
+
+流程参考上游的认证、媒体选择、PlaybackInfo、持续读取媒体流与进度上报方式，在本项目独立实现：
+实际读取视频（约 64 KiB/s 限速、不落盘），按真实时间上报进度，结束时发送 Stopped，并查询 LastPlayedDate。
+只有服务器确认新的观看记录后才记为成功并推进下次日期；未确认、权限不足、无可播视频和连接失败会显示具体原因。
+这只能证明服务器接受了播放记录，各站点的保号规则仍需自行填写；备注不会自动解析为执行周期。
+
+- 每 15 分钟检查到期账号，默认每 7 天随机观看 300–1000 秒；失败后至少间隔 1 小时重试。
+- 网页支持测试连接、立即保活、编辑、暂停/启用定时、删除账号配置；播放中禁止编辑/删除，避免任务竞争。
+- 后台任务和手动任务使用同一账号锁，配置更新采用原子写入与跨进程写锁。
+- 页面显示当前进度、上次观看时间与实际时长、累计验证观看时长、下次计划与执行结果。
+- 地址保留输入路径；如部署在 `/emby` 反向代理路径下，请在服务器地址中填写该路径。
+
+```bash
+node scripts/emby_keepalive.js                      # 执行到期任务
+node scripts/emby_keepalive.js --account <账号ID>   # 单次执行
+```
+
+部署 `deploy/emby-keepalive.service` 与 `.timer` 后启用 `emby-keepalive.timer`。
+自动保活不依赖 Emby Keeper 软件，不启用上游的抢注、群发言、外部认证或模拟其他账号功能。
+
+随机时长在任务启动时只抽取一次，本次目标显示在运行进度中并随最终结果保存。时长缺失的 STRM 远程媒体可尝试播放；媒体流跳转到 CDN 时不会携带 Emby 登录请求头。连续 30 秒无新媒体数据会停止并记录失败。
+
+媒体连接异常时参考上游 `Emby.play()` 的按字节续传方式，最多重新连接两次；续传必须返回 206 且 Content-Range 起点与已读取字节数一致，否则判为失败。媒体首字节等待 60 秒，登录/媒体信息请求每次等待 30 秒，安全的启动请求遇到网络超时可重试一次；播放开始/进度/停止上报不自动重复发送。
+
+客户端与设备字段仅为 HTTP 请求中上报的信息，本程序没有运行 SenPlayer 或 iOS，也没有解码视频画面。这些字段及观看记录成功不代表管理员无法识别自动化；不得将它描述为真实手机身份认证。

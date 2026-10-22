@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Emby keepalive schedules every 15 minutes
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+AccuracySec=1m
+Unit=emby-keepalive.service
+
+[Install]
+WantedBy=timers.target

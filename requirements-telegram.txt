@@ -1,0 +1,5 @@
+# Independent Telegram client and local OCR; Embykeeper is not required.
+kurigram==2.2.12
+tgcrypto
+pillow
+ddddocrfix

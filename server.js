@@ -18,6 +18,7 @@ const {
 } = require("./lib/common");
 
 loadLocalEnv();
+const embyKeepalive = require("./lib/emby-keepalive");
 
 const {
   readAccounts,
@@ -49,7 +50,7 @@ const EMBYKEEPER_RUNTIME_DIR = path.join(EMBYKEEPER_DIR, "runtime");
 const TELEGRAM_CHECKIN_RESULTS_FILE = path.join(DATA_DIR, "telegram_bot_checkin_results.json");
 const TELEGRAM_BOT_TOKEN = String(process.env.TELEGRAM_BOT_TOKEN || "").trim();
 const EMBYKEEPER_VENV_DIR = path.join(__dirname, ".venv-embykeeper");
-const EMBYKEEPER_BIN = path.join(EMBYKEEPER_VENV_DIR, "bin", "embykeeper");
+const EMBYKEEPER_BIN = path.join(EMBYKEEPER_VENV_DIR, "bin", "python");
 const EMBYKEEPER_RUNNER = path.join(__dirname, "scripts", "embykeeper_run_once.sh");
 const CUSTOM_TG_WORKER = path.join(__dirname, "scripts", "telegram_bot_checkin.py");
 const PUBLIC_DIR = path.join(__dirname, "public");
@@ -222,6 +223,11 @@ function normalizeEmbykeeperForm(body = {}) {
 
   const botTemplatesRaw = Array.isArray(source.botTemplates) ? source.botTemplates : defaults.botTemplates;
   const botTemplates = botTemplatesRaw.map((item) => ({
+    buttonSequence: normalizeStringArray(item?.buttonSequence || item?.button_sequence, []),
+    requireExistingChat: Boolean(item?.requireExistingChat),
+    captchaLengths: item?.captchaLengths || [],
+    captchaPattern: String(item?.captchaPattern || ""),
+    source: String(item?.source || ""),
     botUsername: String(item?.botUsername || item?.bot_username || "").trim(),
     name: String(item?.name || "").trim(),
     commands: normalizeStringArray(item?.commands || item?.botCheckinCmd || item?.bot_checkin_cmd, ["/checkin"]),
@@ -419,7 +425,7 @@ function runEmbykeeperOnce() {
         output,
         error: "自定义 Telegram Bot 签到运行超时"
       });
-    }, 90000);
+    }, Math.max(90000, Math.min(3600000, readEmbykeeperForm().botTemplates.length * 45000)));
 
     child.stdout.on("data", (chunk) => {
       output += chunk.toString("utf8");
@@ -1774,8 +1780,58 @@ async function handleApi(req, res, url) {
       return;
     }
 
+    if (pathname === "/api/v1/emby/keepalive" || pathname.startsWith("/api/v1/emby/keepalive/")) {
+      try {
+        if (method === "GET" && pathname === "/api/v1/emby/keepalive") {
+          sendJson(res, 200, { accounts: embyKeepalive.list(), generatedAt: new Date().toISOString() });
+          return;
+        }
+        if (method === "POST" && pathname === "/api/v1/emby/keepalive") {
+          sendJson(res, 201, { account: embyKeepalive.create(await readRequestBody(req)) });
+          return;
+        }
+        const match = pathname.match(/^\/api\/v1\/emby\/keepalive\/([a-zA-Z0-9_-]+)(?:\/(run|test))?$/);
+        if (match) {
+          const [,id,action] = match;
+          if (method === "POST" && action === "run") { sendJson(res,202,embyKeepalive.launch(id)); return; }
+          if (method === "POST" && action === "test") { sendJson(res,200,await embyKeepalive.test(id)); return; }
+          if (method === "PUT" && !action) { sendJson(res,200,{ account:embyKeepalive.edit(id,await readRequestBody(req)) }); return; }
+          if (method === "DELETE" && !action) { embyKeepalive.remove(id); sendJson(res,200,{ok:true}); return; }
+        }
+        sendJson(res,404,{error:"Not Found"});
+      } catch(error) { sendJson(res,error.status || 400,{error:error.message || "Emby 保活操作失败"}); }
+      return;
+    }
+
     if (method === "GET" && pathname === "/api/v1/summary") {
       sendJson(res, 200, await buildMobileSummary(req));
+      return;
+    }
+
+    if (method === "GET" && pathname === "/api/v1/telegram/catalog") {
+      const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "templates/telegram_bot_catalog.json"), "utf8"));
+      const existing = new Set(readEmbykeeperForm().botTemplates.map(b => b.botUsername.replace(/^@/, "").toLowerCase()));
+      sendJson(res, 200, { ...catalog, bots: catalog.bots.map(b => ({ ...b, configured: existing.has(b.botUsername.toLowerCase()) })) });
+      return;
+    }
+
+    if (method === "POST" && pathname === "/api/v1/telegram/catalog") {
+      const body = await readRequestBody(req);
+      const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "templates/telegram_bot_catalog.json"), "utf8"));
+      const profile = catalog.bots.find(b => b.id === body.id);
+      if (!profile || !profile.available) {
+        sendJson(res, 400, { error: "此 Bot 需要专用流程，目前尚未独立适配" });
+        return;
+      }
+      const form = JSON.parse(fs.readFileSync(EMBYKEEPER_FORM_FILE, "utf8"));
+      if (form.botTemplates.some(b => b.botUsername.replace(/^@/, "").toLowerCase() === profile.botUsername.toLowerCase())) {
+        sendJson(res, 409, { error: "该机器人已添加" });
+        return;
+      }
+      const { id, available, upstreamDefault, reason, ...bot } = profile;
+      form.botTemplates.push({ ...bot, targetPhones: [] });
+      writeEmbykeeperForm(form);
+      sendJson(res, 201, { ok: true, botUsername: bot.botUsername });
       return;
     }
 
@@ -2304,7 +2360,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if ((req.method === "GET" || req.method === "HEAD") &&
-        /^\/dashboard\/(?:index\.html|dashboard-runtime\.js|dashboard-patches\.css|reference-\d+\.css)?$/.test(url.pathname)) {
+        /^\/dashboard\/(?:index\.html|dashboard-runtime\.js|dashboard-patches\.css|emby-keepalive\.js|reference-\d+\.css)?$/.test(url.pathname)) {
       if (url.pathname === "/dashboard/") url.pathname += "index.html";
       serveStatic(req, res, url);
       return;

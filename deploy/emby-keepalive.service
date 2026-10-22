@@ -1,0 +1,11 @@
+[Unit]
+Description=Run due Emby keepalive playback tasks
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/glados-checkin-web
+EnvironmentFile=-/root/glados-checkin-web/.env
+ExecStart=/usr/bin/node /root/glados-checkin-web/scripts/emby_keepalive.js
+TimeoutStartSec=infinity

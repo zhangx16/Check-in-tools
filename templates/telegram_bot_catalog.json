@@ -1,0 +1,4887 @@
+{
+  "source": "https://github.com/emby-keeper/emby-keeper",
+  "referenceVersion": "7.6.1",
+  "bots": [
+    {
+      "id": "agentsgk",
+      "name": "007 社工库",
+      "botUsername": "sgk007_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "aisgk",
+      "name": "AI 社工库",
+      "botUsername": "aishegongkubot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "请勿重复签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "aivbi",
+      "name": "AIVBI",
+      "botUsername": "AIVBIbot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "akile",
+      "name": "Akile",
+      "botUsername": "akilecloud_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid",
+        "未绑定"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "akuai",
+      "name": "Akuai",
+      "botUsername": "joulilibot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "alpha",
+      "name": "Alpha 海外服",
+      "botUsername": "AlphaTVOverseaBoss_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "apop",
+      "name": "Apop",
+      "botUsername": "apopcloudemby_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "apoppro",
+      "name": "Apop Pro",
+      "botUsername": "apopembypro_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "ask",
+      "name": "Ask",
+      "botUsername": "askUniversal_bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "恭喜获得"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "aurora",
+      "name": "Aurora Media",
+      "botUsername": "AuroraMedia1_bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "awamusic",
+      "name": "AWA 音乐服",
+      "botUsername": "awamm_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "awatv",
+      "name": "AWA 影视服",
+      "botUsername": "awatv3_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "baidusgk",
+      "name": "度娘社工库",
+      "botUsername": "baidusell_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "bearsgk",
+      "name": "小熊社工库",
+      "botUsername": "BearSGK_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "请勿重复签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "bibi",
+      "name": "比比",
+      "botUsername": "BBFreeFilm_bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "bingdaosgk",
+      "name": "冰岛社工库",
+      "botUsername": "BingDaoSGKBot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "bitsgk",
+      "name": "Bit 社工库",
+      "botUsername": "BitSGKBot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "签到"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "bluesea",
+      "name": "Bluesea",
+      "botUsername": "blueseamusic_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/cancel",
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [
+        "会话已取消",
+        "没有活跃的会话"
+      ],
+      "useCaptcha": true,
+      "captchaLengths": 4,
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "bostsgk",
+      "name": "Bost 社工库",
+      "botUsername": "BOST_SGK_BOT",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "carll1sgk",
+      "name": "Carll 社工库 1",
+      "botUsername": "Carllnet_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "carll2sgk",
+      "name": "Carll 社工库 2",
+      "botUsername": "Carllnet2_bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "cc",
+      "name": "CC公益",
+      "botUsername": "EmbyCc_bot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "已经签到过了"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "请选择正确验证码",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "charon",
+      "name": "卡戎",
+      "botUsername": "charontv_bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "购买账号"
+      ],
+      "textIgnore": [
+        "已结束当前对话"
+      ],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "chunjiangsgk",
+      "name": "春江社工库",
+      "botUsername": "ChunJiang_SGK_Bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "ciji",
+      "name": "Ciji",
+      "botUsername": "MM_nastool_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "datasgk",
+      "name": "数据社工库",
+      "botUsername": "DataSGK_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/signin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "请勿重复签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "dingdangsgk",
+      "name": "叮当猫社工库",
+      "botUsername": "DingDangCats_Bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "dogsgk",
+      "name": "狗狗社工库",
+      "botUsername": "DogeSGK_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "请勿重复签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "dpeak",
+      "name": "DPeak",
+      "botUsername": "emby_dpeak_bot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "dvfilm",
+      "name": "DVfilm",
+      "botUsername": "DVfilm_user_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "embyhub",
+      "name": "EmbyHub",
+      "botUsername": "EdHubot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "epub",
+      "name": "EPub 电子书库 Emby 机器人签到",
+      "botUsername": "wenjian_emby_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "fanhuasgk",
+      "name": "繁花社工库",
+      "botUsername": "FanHuaSGK_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "feiji",
+      "name": "飞机工具箱",
+      "botUsername": "fjtool_bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/signin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "feiyue",
+      "name": "飞跃彩虹",
+      "botUsername": "FeiyueEmby_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "feiyuedpx",
+      "name": "飞跃地平线",
+      "botUsername": "feiyueDPX_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "feiyuemusic",
+      "name": "飞跃星空",
+      "botUsername": "xingkongmusic_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "future",
+      "name": "未响",
+      "botUsername": "lotayu_bot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "不能签到"
+      ],
+      "textIgnore": [
+        "請先完成驗證"
+      ],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "happy",
+      "name": "开心服",
+      "botUsername": "happy_sign_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "hdhive",
+      "name": "HDHive",
+      "botUsername": "HDHiveBot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid",
+        "你需要先完成用户初始化"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "heisi",
+      "name": "Heisi",
+      "botUsername": "HeisiheiBot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "hka",
+      "name": "HKA",
+      "botUsername": "hkaemby_bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/cancel",
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [
+        "对话已关闭"
+      ],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "huasgk",
+      "name": "花花社工库",
+      "botUsername": "sgkvipbot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "ikunmusic",
+      "name": "iKun 音乐服",
+      "botUsername": "iikun_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "infsgk",
+      "name": "情报局社工库",
+      "botUsername": "qbjSGKzhuquebot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功"
+      ],
+      "checkedKeywords": [
+        "您已经签到过了"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "ingeeksgk",
+      "name": "Ingeek 社工库",
+      "botUsername": "ingeeksgkbot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "jinding",
+      "name": "金鼎轰炸",
+      "botUsername": "jdHappybot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "jingzhe",
+      "name": "惊蛰",
+      "botUsername": "JingzheProbot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "jms",
+      "name": "卷毛鼠",
+      "botUsername": "jmsembybot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "请明天再来签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "jms_iptv",
+      "name": "卷毛鼠IPTV",
+      "botUsername": "JMSIPTV_bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": 5,
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "johnsgk",
+      "name": "约翰社工库",
+      "botUsername": "yuehanbot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "jsq",
+      "name": "见手青",
+      "botUsername": "jsq_gy_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "judog",
+      "name": "剧狗",
+      "botUsername": "mulgorebot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": 4,
+      "captchaPattern": "请输入验证码",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "july",
+      "name": "july",
+      "botUsername": "NASTOOL7_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "kiku",
+      "name": "Kiku",
+      "botUsername": "kikuemby_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "koisgk",
+      "name": "Koi 社工库",
+      "botUsername": "KoiSGKbot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "lemby",
+      "name": "Lemby",
+      "botUsername": "LembyPremium_BOT",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "levilde",
+      "name": "Levilde Luminia",
+      "botUsername": "Levilde_Luminia_Bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "lily",
+      "name": "Lily",
+      "botUsername": "lilyembybot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "ljyy",
+      "name": "垃圾影音",
+      "botUsername": "zckllflbot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/stop",
+        "/cz"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [
+        "下列选项",
+        "退出流程"
+      ],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "lyrebird",
+      "name": "Lyrebird",
+      "botUsername": "Lyrebird_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "m78",
+      "name": "M78 星云",
+      "botUsername": "M78CheckIn_bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "magic",
+      "name": "魔法Emby",
+      "botUsername": "Magic_EmbyBot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": 2,
+      "captchaPattern": "请输入验证码",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "mastersgk",
+      "name": "Master 社工库",
+      "botUsername": "BaKaMasterBot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "meow",
+      "name": "飞了个喵",
+      "botUsername": "gymeowfly_bot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "micu",
+      "name": "MICU 股东会",
+      "botUsername": "micu_user_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "minisgk",
+      "name": "迷你世界社工库",
+      "botUsername": "mnsjsgkbot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "misty",
+      "name": "Misty",
+      "botUsername": "EmbyMistyBot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "距离上次签到未过"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [
+        "选择您要使用的功能",
+        "欢迎使用",
+        "选择功能"
+      ],
+      "useCaptcha": true,
+      "captchaLengths": 5,
+      "captchaPattern": "请输入验证码",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "mjj",
+      "name": "MJJ",
+      "botUsername": "mjjemby_uesr_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "mooncake",
+      "name": "月饼",
+      "botUsername": "Moonkkbot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "moonkk",
+      "name": "月饼",
+      "botUsername": "Moonkkbot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "moshensgk",
+      "name": "魔神社工库",
+      "botUsername": "moshensgk_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "moyunge",
+      "name": "墨云阁",
+      "botUsername": "MoYunGeBoss_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "nangua",
+      "name": "南瓜音乐",
+      "botUsername": "nanguaemby_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid",
+        "你有号吗你就签到"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "navidrome",
+      "name": "Navidrome",
+      "botUsername": "navidrome_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "nebula",
+      "name": "Nebula",
+      "botUsername": "Nebula_Account_bot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "niaoge",
+      "name": "鸟哥轰炸",
+      "botUsername": "nb3344bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "请勿重复签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "oixel",
+      "name": "Oixel",
+      "botUsername": "oixel_bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "📅 签到"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "pandatv",
+      "name": "PandaTV",
+      "botUsername": "PandaTV_Emby_Bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "peach",
+      "name": "Peach",
+      "botUsername": "peach_emby_bot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": 4,
+      "captchaPattern": "请输入验证码",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "pilipili",
+      "name": "Pilipili",
+      "botUsername": "PiliPiliUltraTv_bot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "<disabled>",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "pingansgk",
+      "name": "平安社工库",
+      "botUsername": "pingansgk_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "plumber",
+      "name": "Plumber",
+      "botUsername": "Luuuigi_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "qingfengsgk",
+      "name": "清风社工库",
+      "botUsername": "Weifeng007_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "您今天已经签到过了"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "qingmei",
+      "name": "青梅映画",
+      "botUsername": "qingmeiemby_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "raismusic",
+      "name": "Raismusic",
+      "botUsername": "raismusicbot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "rednosesgk",
+      "name": "红鼻子社工库",
+      "botUsername": "freesgk123_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "请勿重复签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "ruji",
+      "name": "入机",
+      "botUsername": "ljembyfukh_bot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "rujing",
+      "name": "入境",
+      "botUsername": "rujingModie_bot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "saturday",
+      "name": "SaturDay.Lite",
+      "botUsername": "saturday_lite_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "seedsgk",
+      "name": "Seed 社工库",
+      "botUsername": "SeedSGKBOT",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "sfcju",
+      "name": "非越助手",
+      "botUsername": "sfcju_Bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "shufu",
+      "name": "叔服Emby",
+      "botUsername": "dashu660_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "singularity",
+      "name": "Singularity",
+      "botUsername": "Singularity_Emby_Bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "请输入验证码",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "skysink",
+      "name": "尘烬",
+      "botUsername": "kyououbot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "sssq",
+      "name": "搜书神器",
+      "botUsername": "sosdbot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "star1",
+      "name": "Star 1",
+      "botUsername": "star_emby_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "star2",
+      "name": "Star 2",
+      "botUsername": "star_emby2_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "starcat",
+      "name": "StarCat",
+      "botUsername": "StarCatBot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "starsgk",
+      "name": "星月社工库",
+      "botUsername": "XY_SGKBOT",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "tanhua",
+      "name": "探花",
+      "botUsername": "TanhuaTvBot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到获得积分"
+      ],
+      "checkedKeywords": [
+        "今日已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [
+        "请选择正确的验证码"
+      ],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "tdck",
+      "name": "起点站",
+      "botUsername": "StartTdckBot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到获得积分"
+      ],
+      "checkedKeywords": [
+        "今日已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [
+        "请选择正确的验证码"
+      ],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "tdck_new",
+      "name": "起点站",
+      "botUsername": "tdck_emby_create_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "temby",
+      "name": "Temby",
+      "botUsername": "HiEmbyBot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/hi"
+      ],
+      "successKeywords": [
+        "签到成功"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid",
+        "需要邀请码",
+        "关闭注册"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "temby_beta",
+      "name": "Temby",
+      "botUsername": "Temby_Bot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/hi"
+      ],
+      "successKeywords": [
+        "签到成功"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid",
+        "需要内测码"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "terminus",
+      "name": "终点站",
+      "botUsername": "EmbyPublicBot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/cancel",
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今天已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [
+        "会话已取消",
+        "没有活跃的会话"
+      ],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "theend",
+      "name": "阿甘正传",
+      "botUsername": "theendemby_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "tianmaosgk",
+      "name": "天猫社工库",
+      "botUsername": "UISGKbot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "tiannan",
+      "name": "天南小筑",
+      "botUsername": "Nanflix_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "tiannanus",
+      "name": "天南小筑 US",
+      "botUsername": "US_nan_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "unionsgk",
+      "name": "银联社工库",
+      "botUsername": "unionpaysgkbot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "worldline",
+      "name": "WorldLine",
+      "botUsername": "WorldLineEmby_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "xigua",
+      "name": "西瓜",
+      "botUsername": "XiguaEmbyBot",
+      "available": false,
+      "upstreamDefault": true,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "xraysgk",
+      "name": "Xray 社工库",
+      "botUsername": "Zonesgk_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "yezi",
+      "name": "叶子",
+      "botUsername": "yeziemby_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "yezigm",
+      "name": "叶子高码",
+      "botUsername": "yezigm_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "yomo",
+      "name": "Yomo 服不服",
+      "botUsername": "yomoemby_bot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "youno",
+      "name": "Youno",
+      "botUsername": "YounoEmbyAgain_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "zhihusgk",
+      "name": "知乎社工库",
+      "botUsername": "zhihu_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/sign"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "zhipian",
+      "name": "纸片",
+      "botUsername": "zhipianbot",
+      "available": false,
+      "upstreamDefault": false,
+      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "commands": [
+        "/qd"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "zhushousgk",
+      "name": "助手社工库",
+      "botUsername": "sgk001_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/checkin"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": true,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    },
+    {
+      "id": "zm",
+      "name": "鹅服",
+      "botUsername": "ZXCHSJSHbot",
+      "available": true,
+      "upstreamDefault": true,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功",
+        "打卡成功",
+        "checkin successful",
+        "check-in successful"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "已经签到过",
+        "明天再来",
+        "already checked",
+        "already signed"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "embykeeper-reference"
+    }
+  ]
+}

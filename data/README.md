@@ -18,3 +18,6 @@ Expected runtime files include:
 - `embykeeper/runtime/*`
 
 - `vpsnat_accounts.json`：VPSNAT 账号及私有会话令牌、签到结果。
+
+- `emby_keepalive_accounts.json`：Emby 保活配置、密码和执行结果，不上传 Git。
+- `emby_keepalive_locks/`：本机播放任务锁。
