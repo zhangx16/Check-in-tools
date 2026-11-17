@@ -47,7 +47,7 @@ test('merging execution records retains edited credentials and account metadata'
 });
 async function tempProject(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'workbuddy-test-'));
-  for (const folder of ['lib', 'routes', 'scripts', 'templates']) fs.cpSync(path.join(root, folder), path.join(dir, folder), { recursive: true });
+  for (const folder of ['lib', 'routes', 'domain', 'scripts', 'templates']) fs.cpSync(path.join(root, folder), path.join(dir, folder), { recursive: true });
   fs.copyFileSync(path.join(root, 'server.js'), path.join(dir, 'server.js'));
   fs.mkdirSync(path.join(dir,'public/dashboard'),{recursive:true});
   for(const name of ['index.html','workbuddy-ui.js']) fs.copyFileSync(path.join(root,'public/dashboard',name),path.join(dir,'public/dashboard',name));

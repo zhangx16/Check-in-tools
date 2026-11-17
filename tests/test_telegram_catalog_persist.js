@@ -2,10 +2,17 @@ const test=require("node:test"),assert=require("node:assert/strict"),fs=require(
 const {startServer,credentials}=require("./http-helper.cjs");
 test("catalog addition persists TOML and preserves extensions through update/delete",async t=>{
  const app=await startServer(t,{"embykeeper/form.json":{telegramAccounts:[{phone:"+10000000000",apiId:"12345",apiHash:"fixture",session:"fixture-session"}],botTemplates:[{botUsername:"KeepBot",commands:["/start"],buttonSequence:["签到"],custom:{keep:true}}],custom:{keep:true}}});
+ const cookie=await app.login();
+ const publicForm=await app.request('/api/embykeeper/form',{cookie});assert.equal(JSON.stringify(publicForm.body).includes('fixture-session'),false);assert.equal(publicForm.body.form.telegramAccounts[0].hasSession,true);
  const token=credentials.APP_API_TOKEN;const catalog=await app.request("/api/v1/telegram/catalog",{token});
  assert.equal(catalog.status,200,JSON.stringify(catalog.body));const bot=catalog.body.bots.find(x=>x.available&&!x.configured);assert.ok(bot);
  assert.equal((await app.request("/api/v1/telegram/catalog",{token,method:"POST",body:{id:bot.id}})).status,201);
  assert.ok(fs.readFileSync(path.join(app.data,"embykeeper/config.toml"),"utf8").includes(bot.botUsername));
+ const publicConfig=await app.request('/api/embykeeper/config',{cookie});assert.equal(JSON.stringify(publicConfig.body).includes('fixture-session'),false);
+ assert.equal((await app.request('/api/embykeeper/config',{cookie,method:'PUT',body:{config:publicConfig.body.config}})).status,200);
+ assert.ok(fs.readFileSync(path.join(app.data,"embykeeper/config.toml"),'utf8').includes('fixture-session'));
+ assert.equal((await app.request('/api/embykeeper/form',{cookie,method:'PUT',body:{form:{...publicForm.body.form,botTemplates:(await app.request('/api/embykeeper/form',{cookie})).body.form.botTemplates}}})).status,200);
+ assert.equal(JSON.parse(fs.readFileSync(path.join(app.data,'embykeeper/form.json'))).telegramAccounts[0].session,'fixture-session');
  assert.equal((await app.request("/api/v1/telegram/bots/KeepBot",{token,method:"PUT",body:{name:"renamed"}})).status,200);
  assert.equal((await app.request("/api/v1/telegram/bots/"+bot.botUsername,{token,method:"DELETE"})).status,200);
  const form=JSON.parse(fs.readFileSync(path.join(app.data,"embykeeper/form.json")));assert.deepEqual(form.custom,{keep:true});assert.deepEqual(form.botTemplates[0].buttonSequence,["签到"]);assert.deepEqual(form.botTemplates[0].custom,{keep:true});

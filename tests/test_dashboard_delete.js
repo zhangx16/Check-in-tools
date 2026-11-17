@@ -13,6 +13,7 @@ test('authenticated project deletion preserves unrelated configuration and permi
  fs.copyFileSync(path.join(project,'server.js'),path.join(root,'server.js'));
  fs.cpSync(path.join(project,'lib'),path.join(root,'lib'),{recursive:true});
  fs.cpSync(path.join(project,'routes'),path.join(root,'routes'),{recursive:true});
+ fs.cpSync(path.join(project,'domain'),path.join(root,'domain'),{recursive:true});
  fs.mkdirSync(path.join(root,'templates'));
  fs.copyFileSync(path.join(project,'templates/telegram_bot_catalog.json'),path.join(root,'templates/telegram_bot_catalog.json'));
  const data=path.join(root,'data');fs.mkdirSync(path.join(data,'embykeeper'),{recursive:true});

@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node server.js",
     "check": "node scripts/check_syntax.js",
-    "test": "node --test tests/test_lib.js tests/test_vpsnat.js tests/test_dashboard_delete.js tests/test_glados.js tests/test_zzcat.js tests/test_emby_keepalive.js tests/test_thxnk.js tests/test_workbuddy.js tests/test_workbuddy_auth.js tests/test_workbuddy_login.js tests/test_workbuddy_import.js tests/test_http_auth.js tests/test_telegram_catalog_persist.js tests/test_audit.js tests/test_store_lock.js tests/test_raw_strip.js tests/test_summary_cache.js",
+    "test": "node scripts/run_tests.js",
     "test:telegram": ".venv-embykeeper/bin/python -m unittest discover -s tests -p 'test_telegram*.py'",
     "test:workbuddy": "node --test tests/test_workbuddy.js tests/test_workbuddy_auth.js tests/test_workbuddy_login.js tests/test_workbuddy_import.js && .venv-embykeeper/bin/python -m unittest discover -s tests -p \"test_workbuddy*.py\""
   },

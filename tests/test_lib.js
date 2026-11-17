@@ -54,7 +54,7 @@ test("provider dispatcher falls back to glados", () => {
   assert.equal(providerKey({}), "glados");
   assert.equal(providerKey({ provider: "embymb" }), "embymb");
   assert.equal(getProvider("embypulse").runAccountCheckin.name, "runAccountCheckin");
-  assert.equal(getProvider({ provider: "unknown" }), getProvider("glados"));
+  assert.throws(() => getProvider({ provider: "unknown" }), /未知 provider/);
 });
 
 test("already-checked-in detection covers common messages", () => {

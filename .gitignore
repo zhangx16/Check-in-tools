@@ -50,3 +50,6 @@ design/checkin-dashboard/*.png
 design/checkin-dashboard/qa-*.json
 design/checkin-dashboard/selection.json
 deploy/ci.*.conf
+
+# Also exclude local symlinks to optional virtual environments.
+.venv-*

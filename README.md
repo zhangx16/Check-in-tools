@@ -414,3 +414,13 @@ Summary responses cache for 30 seconds, invalidate on source-file changes, and r
 Telegram subprocess output retains at most 64 KiB; runtime is capped at ten minutes, with termination escalation. A shared `data/embykeeper/run.lock` excludes overlapping web/timer workers; a web-owned lock remains held until the child actually closes. Existing Python entry points remain. The production venv is untouched.
 
 Validation adds cross-process transaction, result-merge, raw projection, cache expiration/copy isolation, deferred icon download and offline dashboard tests. Fifty local dashboard requests measured p95 7.91 ms in the isolated fixture (this is not a production load guarantee). Rollback: revert PR2 after stopping workers; JSON remains readable by PR1. No SQLite/Redis service or production-data rewrite is introduced.
+
+### Production refactor PR3: domain services and HTTP contracts
+
+`domain/` now owns account validation, check-in orchestration, Telegram persistence, project names, status aggregation and summary/dashboard projection. HTTP adapters retain authentication, body parsing and DTO mapping. Provider request implementations are unchanged; unknown provider keys now fail explicitly instead of falling back to GLaDOS. Account creation/update checks duplicate provider usernames or keyed cookie fingerprints inside the write transaction. Notes are limited to 4,000 characters.
+
+`partial` is a shared project state for successful/already-completed accounts mixed with skipped accounts. Summary and dashboard use the same project projection, including configured bots without results and hiding deleted bots. Individual check-in success/failure judgments are unchanged. WorkBuddy batch operations return 202 and job metadata while queued; no synthetic failed check-in is stored. Worker completion merges remain transactional.
+
+Telegram form responses expose `hasSession`; session strings stay on the server. Blank form session updates retain the existing session (`clearSession: true` explicitly clears it). The legacy TOML editor uses indexed session placeholders that restore stored values on save. `CHECKIN_DATA_DIR` can isolate test/deployment data; default remains `data/`.
+
+`npm test` now discovers all Node tests and runs Telegram Python tests when `.venv-embykeeper/bin/python` exists. Validation: 69 Node tests and 49 Telegram Python tests passed; native Node coverage across `domain/*.js` and `routes/*.js` was 94.77% lines / 76.22% branches in the HTTP/domain suite. The optional Python runtime was reused read-only for tests; no production venv or account data was rewritten. Rollback: revert PR3; account JSON stays compatible, with a fresh web login if also reverting PR1.
