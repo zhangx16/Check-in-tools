@@ -3,7 +3,7 @@
 const { loadLocalEnv, formatIso, formatBeijing } = require("../lib/common");
 loadLocalEnv();
 
-const { readProviderAccounts, writeProviderAccounts } = require("../lib/accounts");
+const { readProviderAccounts, commitAccountRuns } = require("../lib/accounts");
 const embymb = require("../lib/providers/embymb");
 const { runWithRetries, runDailyJob, getDailyConfig } = require("../lib/daily");
 
@@ -90,7 +90,7 @@ async function main() {
   await runDailyJob({
     title: "EmbyMB 每日签到报告",
     accounts: readProviderAccounts("embymb"),
-    writeAccounts: (accounts) => writeProviderAccounts("embymb", accounts),
+    writeAccounts: (accounts, originals) => commitAccountRuns("embymb", accounts, originals),
     runOne: (account) => runWithRetries("embymb-checkin", account, (item) => embymb.runAccountCheckin(item)),
     buildReport,
     buildFailureAlert

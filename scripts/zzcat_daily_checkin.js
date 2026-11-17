@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const { loadLocalEnv } = require('../lib/common');
 loadLocalEnv();
-const { readProviderAccounts, writeProviderAccounts } = require('../lib/accounts');
+const { readProviderAccounts, commitAccountRuns } = require('../lib/accounts');
 const zzcat = require('../lib/providers/zzcat');
 const { runWithRetries, runDailyJob } = require('../lib/daily');
 const { buildCompactFailureAlert } = require('../lib/checkin-report');
@@ -9,9 +9,9 @@ async function main() {
   const all = readProviderAccounts('zzcat');
   await runDailyJob({
     title: '这只猫每日签到', accounts: all.filter(a => a.enabled !== false),
-    writeAccounts: updated => {
+    writeAccounts: (updated, originals) => {
       const byId = new Map(updated.map(a => [a.id, a]));
-      writeProviderAccounts('zzcat', readProviderAccounts('zzcat').map(a => byId.get(a.id) || a));
+      commitAccountRuns('zzcat', updated, originals);
     },
     runOne: a => runWithRetries('zzcat-checkin', a, zzcat.runAccountCheckin,
       { shouldRetry: (c, n, max) => !c.ok && n < max && !/会话已失效|缺少.*Cookie/.test(c.message || '') }),

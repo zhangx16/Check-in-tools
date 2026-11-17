@@ -1643,4 +1643,10 @@ async def main():
 
 
 if __name__ == "__main__":
-    raise SystemExit(asyncio.run(main()))
+    from telegram_worker_lock import worker_lock
+    try:
+        with worker_lock(Path(__file__).resolve().parents[1] / "data/embykeeper/run.lock"):
+            raise SystemExit(asyncio.run(main()))
+    except RuntimeError:
+        print("Telegram 签到任务正在运行，请稍后重试")
+        raise SystemExit(1)

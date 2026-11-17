@@ -1,5 +1,5 @@
 module.exports = function createRoutes(context) {
-const { createAccount, updateAccount, deleteAccount, workbuddyJobs, readAccounts, writeAccounts, runAccountCheckin, sendJson, readRequestBody, toMobileAccountDetail, normalizeAccountMobileUpdate, normalizeAccountInput, validateAccount, findAccountOrNull, runBatch } = context;
+const { updateAccounts, mergeExecution, createAccount, updateAccount, deleteAccount, workbuddyJobs, readAccounts, writeAccounts, runAccountCheckin, sendJson, readRequestBody, toMobileAccountDetail, normalizeAccountMobileUpdate, normalizeAccountInput, validateAccount, findAccountOrNull, runBatch } = context;
 return async function route(req,res,url) {
 const pathname=url.pathname, method=req.method||"GET";
 if (method === "GET" && pathname === "/api/v1/accounts") {
@@ -67,7 +67,7 @@ if (method === "POST" && pathname === "/api/v1/checkin/run") {
         ok: Boolean(summary?.checkin?.ok),
         message: summary?.checkin?.message || ""
       }));
-      writeAccounts(accounts);
+      // runBatch already committed execution fields.
       sendJson(res, 200, {
         ok: results.every((r) => r.ok),
         results,
@@ -86,8 +86,7 @@ if (v1CheckinMatch && method === "POST") {
       }
       if (account.provider === "workbuddy") { sendJson(res, 202, workbuddyJobs.launch(accountId, "auto")); return; }
     const processed = await runAccountCheckin(account);
-      const nextAccounts = readAccounts().map((item) => (item.id === accountId ? processed.account : item));
-      writeAccounts(nextAccounts);
+      const nextAccounts = updateAccounts(current => current.map(item => item.id === accountId ? mergeExecution(item, processed.account, account) : item));
       sendJson(res, 200, {
         ok: Boolean(processed.summary?.checkin?.ok ?? processed.account?.lastCheckin?.ok),
         result: processed.summary,

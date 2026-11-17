@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const { loadLocalEnv } = require('../lib/common');
 loadLocalEnv();
-const { readProviderAccounts, writeProviderAccounts } = require('../lib/accounts');
+const { readProviderAccounts, updateProviderAccounts } = require('../lib/accounts');
 const workbuddy = require('../lib/providers/workbuddy');
 const { runWithRetries, runDailyJob } = require('../lib/daily');
 const { buildCompactFailureAlert } = require('../lib/checkin-report');
@@ -12,7 +12,7 @@ async function main() {
     accounts: [...originals.values()].filter(a => a.enabled !== false),
     writeAccounts: updated => {
       const byId = new Map(updated.map(a => [a.id, a]));
-      writeProviderAccounts('workbuddy', readProviderAccounts('workbuddy').map(a => {
+      updateProviderAccounts('workbuddy', current => current.map(a => {
         const result = byId.get(a.id), original = originals.get(a.id);
         return result && result.lastCheckin?.code !== 'BUSY' && JSON.stringify(a.workbuddySession) === JSON.stringify(original?.workbuddySession)
           ? workbuddy.mergeRun(a, result) : a;

@@ -3,7 +3,7 @@
 const { loadLocalEnv, formatIso, formatBeijing } = require("../lib/common");
 loadLocalEnv();
 
-const { readProviderAccounts, writeProviderAccounts } = require("../lib/accounts");
+const { readProviderAccounts, commitAccountRuns } = require("../lib/accounts");
 const embypulse = require("../lib/providers/embypulse");
 const { runWithRetries, runDailyJob, getDailyConfig } = require("../lib/daily");
 
@@ -63,7 +63,7 @@ async function main() {
     await runDailyJob({
       title: "EmbyPulse 每日签到报告",
       accounts,
-      writeAccounts: (items) => writeProviderAccounts("embypulse", items),
+      writeAccounts: (items, originals) => commitAccountRuns("embypulse", items, originals),
       runOne: (account) => runWithRetries("embypulse-checkin", account, (item) => embypulse.runAccountCheckin(item)),
       buildReport,
       buildFailureAlert: cfg.alertOnFailure ? buildFailureAlert : null

@@ -3,7 +3,7 @@
 const { loadLocalEnv, formatIso, formatBeijing } = require("../lib/common");
 loadLocalEnv();
 
-const { readProviderAccounts, writeProviderAccounts } = require("../lib/accounts");
+const { readProviderAccounts, commitAccountRuns } = require("../lib/accounts");
 const glados = require("../lib/providers/glados");
 const { runWithRetries, runDailyJob, getDailyConfig } = require("../lib/daily");
 
@@ -98,7 +98,7 @@ async function main() {
   await runDailyJob({
     title: "每日签到报告",
     accounts: readProviderAccounts("glados"),
-    writeAccounts: (accounts) => writeProviderAccounts("glados", accounts),
+    writeAccounts: (accounts, originals) => commitAccountRuns("glados", accounts, originals),
     runOne: (account) => runWithRetries("glados-checkin", account, (item) => glados.runAccountCheckin(item), { shouldRetry: glados.shouldRetryCheckin }),
     buildReport,
     buildFailureAlert

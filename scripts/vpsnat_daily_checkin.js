@@ -3,7 +3,7 @@
 const { loadLocalEnv, formatIso, formatBeijing } = require("../lib/common");
 loadLocalEnv();
 
-const { readProviderAccounts, writeProviderAccounts } = require("../lib/accounts");
+const { readProviderAccounts, commitAccountRuns } = require("../lib/accounts");
 const vpsnat = require("../lib/providers/vpsnat");
 const { runWithRetries, runDailyJob, getDailyConfig } = require("../lib/daily");
 
@@ -90,7 +90,7 @@ async function main() {
   await runDailyJob({
     title: "VPSNAT 纳泰云 每日签到报告",
     accounts: readProviderAccounts("vpsnat").filter((account) => account.enabled !== false),
-    writeAccounts: (accounts) => writeProviderAccounts("vpsnat", accounts),
+    writeAccounts: (accounts, originals) => commitAccountRuns("vpsnat", accounts, originals),
     runOne: (account) => runWithRetries("vpsnat-checkin", account, (item) => vpsnat.runAccountCheckin(item)),
     buildReport,
     buildFailureAlert

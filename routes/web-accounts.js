@@ -1,5 +1,5 @@
 module.exports = function createRoutes(context) {
-const { createAccount, updateAccount, deleteAccount, path, DATA_DIR, workbuddyJobs, readAccounts, writeAccounts, refreshAccountStatus, runAccountCheckin, ADMIN_USER, isAuthenticated, sendJson, readRequestBody, audit, toPublicAccount, toPublicAccountDetail, normalizeAccountMobileUpdate, normalizeAccountInput, validateAccount, findAccountOrNull, runBatch, getExportData } = context;
+const { updateAccounts, mergeExecution, createAccount, updateAccount, deleteAccount, path, DATA_DIR, workbuddyJobs, readAccounts, writeAccounts, refreshAccountStatus, runAccountCheckin, ADMIN_USER, isAuthenticated, sendJson, readRequestBody, audit, toPublicAccount, toPublicAccountDetail, normalizeAccountMobileUpdate, normalizeAccountInput, validateAccount, findAccountOrNull, runBatch, getExportData } = context;
 return async function route(req,res,url) {
 const pathname=url.pathname, method=req.method||"GET";
 if (method === "GET" && pathname === "/api/accounts") {
@@ -47,8 +47,7 @@ if (method === "POST" && pathname === "/api/accounts/import") {
       return;
     }
 
-    const accounts = [...imported, ...readAccounts()];
-    writeAccounts(accounts);
+    const accounts = updateAccounts(current => [...imported, ...current]);
     sendJson(res, 201, { accounts: imported.map(toPublicAccount) });
     return;
   }
@@ -63,8 +62,7 @@ if (method === "POST" && pathname === "/api/accounts/batch-delete") {
 
     const idSet = new Set(ids);
     const accounts = readAccounts();
-    const nextAccounts = accounts.filter((item) => !idSet.has(item.id));
-    writeAccounts(nextAccounts);
+    const nextAccounts = updateAccounts(current => current.filter(item => !idSet.has(item.id)));
     sendJson(res, 200, { deletedIds: ids, accounts: nextAccounts.map(toPublicAccount) });
     return;
   }
@@ -73,7 +71,7 @@ if (method === "POST" && pathname === "/api/status/refresh") {
     const ids = Array.isArray(body?.ids) ? body.ids : [];
     const accounts = readAccounts();
     const processed = await runBatch(accounts, ids, refreshAccountStatus);
-    writeAccounts(processed.accounts);
+    // runBatch commits execution fields under the account lock.
     sendJson(res, 200, {
       results: processed.results,
       accounts: processed.accounts.map(toPublicAccount)
@@ -85,7 +83,7 @@ if (method === "POST" && pathname === "/api/checkin/run") {
     const ids = Array.isArray(body?.ids) ? body.ids : [];
     const accounts = readAccounts();
     const processed = await runBatch(accounts, ids, runAccountCheckin);
-    writeAccounts(processed.accounts);
+    // runBatch commits execution fields under the account lock.
     sendJson(res, 200, {
       results: processed.results,
       accounts: processed.accounts.map(toPublicAccount)
@@ -134,8 +132,7 @@ if (method === "POST" && statusMatch) {
 
     if (account.provider === "workbuddy") { sendJson(res, 202, workbuddyJobs.launch(accountId, "status")); return; }
     const processed = await refreshAccountStatus(account);
-    const nextAccounts = readAccounts().map((item) => (item.id === accountId ? processed.account : item));
-    writeAccounts(nextAccounts);
+    const nextAccounts = updateAccounts(current => current.map(item => item.id === accountId ? mergeExecution(item, processed.account, account) : item));
     sendJson(res, 200, { result: processed.summary, account: toPublicAccount(processed.account) });
     return;
   }
@@ -152,8 +149,7 @@ if (method === "POST" && checkinMatch) {
 
     if (account.provider === "workbuddy") { sendJson(res, 202, workbuddyJobs.launch(accountId, "auto")); return; }
     const processed = await runAccountCheckin(account);
-    const nextAccounts = readAccounts().map((item) => (item.id === accountId ? processed.account : item));
-    writeAccounts(nextAccounts);
+    const nextAccounts = updateAccounts(current => current.map(item => item.id === accountId ? mergeExecution(item, processed.account, account) : item));
     sendJson(res, 200, { result: processed.summary, account: toPublicAccount(processed.account) });
     return;
   }
