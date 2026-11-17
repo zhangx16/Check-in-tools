@@ -8,6 +8,7 @@ const { sendTelegramReport } = require("../lib/telegram");
 const { buildCompactReport } = require("../lib/checkin-report");
 
 const PROVIDERS = [
+  { key: "thxnk", label: "练习生的日常", defaultBaseUrl: "https://thxnk.cc", balanceLabel: "当前余额", defaultCurrency: "只因" },
   { key: "zzcat", label: "这只猫用户中心", defaultBaseUrl: "https://user.090911.xyz", balanceLabel: "当前猫币", defaultCurrency: "猫币" },
   { key: "vpsnat", label: "VPSNAT 纳泰云", defaultBaseUrl: process.env.DEFAULT_VPSNAT_BASE_URL || "https://www.vpsnat.com", balanceLabel: "当前积分", defaultCurrency: "积分" },
   {
@@ -35,7 +36,7 @@ const PROVIDERS = [
 
 function readWebsiteAccounts() {
   const byKey = new Map(PROVIDERS.map((provider) => [provider.key, provider]));
-  return readAccounts().map((account) => {
+  return readAccounts().filter(account => byKey.has(account.provider || "glados")).map((account) => {
     const provider = byKey.get(account.provider || "glados") || byKey.get("glados");
     return {
       ...account,

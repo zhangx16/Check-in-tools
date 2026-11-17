@@ -36,7 +36,7 @@
 ## 环境要求
 
 - Node.js 18 或更高版本
-- 可选：Python 3.11+ 和独立 Telegram 依赖，用于 Telegram Bot 签到
+- 可选：Python 3.11+ 和独立 Telegram 依赖，用于 Telegram Bot 签到及 GLaDOS Cloudflare 验证
 - 可选：systemd 和 Nginx，用于服务器部署
 
 ## 快速开始
@@ -145,6 +145,8 @@ GLaDOS：
 node scripts/daily_checkin_report.js
 ```
 
+GLaDOS 返回 `reason=turnstile` 时，自动调用 `scripts/glados_cf_checkin.py` 完成新验证流程：通过配置的代理获取 challenge，以 `action=checkin`、`cdata=nonce` 调用 Peak，计算站点要求的 SHA-256 proof，等待至少 2.5 秒并在 challenge 有效期内提交。每次重试重新获取 challenge；验证码服务失败时不提交。复用 `data/peak_solver.json` 中的 API 密钥和本机认证代理，Cookie 仅发送给 GLaDOS。需要 `.venv-embykeeper/bin/python` 和 `requirements-telegram.txt` 中的依赖，可用 `GLADOS_CF_PYTHON` 指定 Python 路径。2026-11-15 两个账号均已实测签到成功，各获得 2 积分。
+
 EmbyPulse：
 
 ```bash
@@ -172,6 +174,14 @@ MDL 需要先绑定账号，本机仅对已绑定账号执行；其他 Bot 未�
 ```bash
 CHECKIN_BOT_USERNAMES=mdlrtgy_bot,Freshippo_bot,fengyuegeBOt,bb_emby_bot scripts/telegram_bot_checkin_once.sh
 ```
+
+Cloudflare 验证签到：`@XGFree_bot`、`@liminalembybot` 与 `@Moonkkbot` 已接入 [Peak Turnstile API](https://peak.fo/docs)。在 `data/peak_solver.json` 配置 `{"apiKey": "pk_...", "proxy": "http://user:password@host:port"}`（权限 0600，文件已被 Git 忽略）。有代理时使用 `turnstiletask`，同一代理同时用于验证页、识别和结果提交；未配置代理时使用 `TurnstileTaskProxyLess`。发送给 Peak 的页面 URL 会去除查询和 fragment，不包含 Telegram initData 或签名链接；保留验证所需 sitekey、action 和 cdata。一次签到最多调用一次识别，验证服务失败不提交伪造答案，只有网站或 Bot 的明确回复才记作成功。XGFree 验证通过后使用返回的 Bot start 参数继续签到；Liminal 提交小程序授权；Moonkk 将 token 提交至对应 challenge 接口。验证码服务可能收费，已有余额不足、代理错误或服务故障会保留为失败。
+
+2026-11-13 实测：XGFree（1329）签到成功，奖励 37 种子；Moonkk（4473）签到成功，奖励 6 月饼。Liminal 的接口和真实页面在 1329、4473 均返回 HTTP 403，尚未完成；本机配置 `pausedBots: ["liminalembybot"]` 暂缓该 Bot 的收费识别，确认服务端原因后清空此列表可恢复。
+
+本机认证 HTTP 代理由 `peak-proxy.service` 管理，监听 TCP 39901；配置位于 `/etc/peak-proxy.conf`，凭据同步到上述私有配置。使用专用系统用户运行，未认证连接会被拒绝，仅开放 CONNECT 443。查看状态：`systemctl status peak-proxy`。远端 Alpine 服务器的测试代理已移除自动启动，当前使用本机出口。
+
+终点站（`@EmbyPublicBot`）使用 `/cancel`、`/checkin`，需要在 30 秒内看图选择物体，每天仅一次机会。已独立适配 [Embykeeper visual 协议](https://github.com/emby-keeper/emby-keeper/blob/main/embykeeper/telegram/link.py)，无需安装 Embykeeper。此功能会通过当前 Telegram 账号向 `@embykeeper_auth_bot` 发送 `/auth visual`，并将验证码图片和候选项发给该 Bot 的 `/visual` 服务，服务可能要求账号权限；不会发送其他聊天内容、密码或 session。首次启用前必须获得账号所有者授权，在 `data/telegram_visual.json` 写入 `{"enabled": true}`；默认关闭，关闭时不发起签到或远端请求。仅接受候选项中的精确答案，并等待 Bot 明确成功回复；每账号每天（UTC）提交前记账，超时或失败不自动重试，记录保存在 `data/telegram_visual_attempts/`。无历史对话的账号会跳过。
 
 Lewa（`@Lewa_user_bot`）签到后检查「积分商城」余额，达到 3000 积分时兑换一张月卡。
 OkEmby（`@okemby_bot`）签到后走「用户功能 → 兑换商店 → 续期可用天数」，满 60 OK 币时按菜单汇率计算可兑换天数并输入。
@@ -223,6 +233,8 @@ HSUYS（`@hsuys_bot`）也已加入 Bot 模板：worker 发送 `/start`，查找
 ZZMEB（`@zzmeb_bot`）同时走两种签到：`/start` 后点击「🎯 签到」，以及打开 MiniApp 面板（`t.me/zzmeb_bot/miniapp`）调用用户中心签到接口。两种方式各自计奖，worker 会把两边结果写进同一条记录。
 
 Nayovo（`@OicOvo_bot`）使用 `/start` 打开菜单，由 worker 点击「🎯 签到」，交互与非越相同。
+宸澄 Ccbot（`@ccwuser_bot`）使用 `/start` 后打开「🎯 签到」小程序，通过 Telegram 授权登录用户中心。worker 先读取当天签到状态，已签到时不重复提交；可签到时提交签到并再次核对服务器状态。
+
 月饼（`@Moonkkbot`）使用 `/start` 打开用户面板，签到按钮会打开 EmbyGuard 小程序；
 worker 读取 WebApp 链接，用 Telegram WebView 的 `init_data` 调用小程序签到接口。
 该 Bot 要求账号已加入受管群；当前通过 `targetPhones` 指定可用账号。
@@ -298,14 +310,14 @@ node scripts/zzcat_daily_checkin.js
 
 参考 [Emby Keeper README](https://github.com/emby-keeper/emby-keeper/blob/main/README.md) 的签到模块元数据，
 整理命令、成功/已签关键词、菜单入口与验证码参数，使用本项目自己的 worker 执行；不安装、导入或调用 Emby Keeper。
-网页「添加机器人」可搜索并添加可独立适配的 Bot。目录包含 122 个非群聊模块，其中 85 个支持通用命令/菜单签到，
+网页「添加机器人」可搜索并添加可独立适配的 Bot。目录包含 124 个非群聊模块，其中 87 个支持通用命令/菜单签到，
 37 个涉及专用交互或外部认证，明确标为尚未适配，不会按通用方案冒充支持。实际签到还取决于账号注册、群组要求及验证码。
 同一 Bot 用户名只添加一次；已有自定义流程优先保留。新增目录配置默认只对已有聊天会话的账号运行。
 
 - `templates/telegram_bot_catalog.json`：带来源和能力标记的静态目录。
 - `scripts/build_bot_catalog.py <上游源码中的checkiner目录>`：通过 AST 提取公开配置，不执行上游代码。
 - `scripts/import_bot_catalog.py`：只读扫描已启用账号的现有 Telegram 会话，添加匹配的可用 Bot，并写入 targetPhones。
-- `scripts/telegram_captcha.py`：验证码图片本地识别，校验答案字符和长度，不使用第三方 Auth Bot。
+- `scripts/telegram_captcha.py`：验证码图片本地识别，校验答案字符和长度。可选远端物体识别由 `scripts/telegram_visual.py` 提供，需单独授权启用。
 - Telegram API ID / Hash 在本地 form 的账号项或 `TELEGRAM_API_ID` / `TELEGRAM_API_HASH` 中配置；原本机凭据已迁移。
 - 历史 `embykeeper_run_once.sh` 只是当前 worker 的兼容入口；每日只启用 `telegram-bot-checkin-daily.timer`，避免两套任务重复签到。
 
@@ -339,3 +351,46 @@ node scripts/emby_keepalive.js --account <账号ID>   # 单次执行
 媒体连接异常时参考上游 `Emby.play()` 的按字节续传方式，最多重新连接两次；续传必须返回 206 且 Content-Range 起点与已读取字节数一致，否则判为失败。媒体首字节等待 60 秒，登录/媒体信息请求每次等待 30 秒，安全的启动请求遇到网络超时可重试一次；播放开始/进度/停止上报不自动重复发送。
 
 客户端与设备字段仅为 HTTP 请求中上报的信息，本程序没有运行 SenPlayer 或 iOS，也没有解码视频画面。这些字段及观看记录成功不代表管理员无法识别自动化；不得将它描述为真实手机身份认证。
+
+Doubon（`@DoubonBot`）通过 `/start` 打开菜单并点击「🎯 签到」，以明确签到成功回复或今日已签提示确认结果；只对已有 Bot 会话的启用账号执行。
+
+宸宇 Emby（`@ChenyuEmby_Bot`）发送 `/start` 后点击「🎯 签到」，只接受明确的成功或今日已签回复；不触发续期、兑换或白名单功能。已有会话的启用账号会自动纳入每日签到。
+
+Emby 保活任务会保存视频 ID、媒体源、播放时间和已读取字节位置，下次优先从上次进度继续。视频被移除、已看完或剩余时长不足本次任务时重新选片。旧版本未保存这些字段的历史记录，从下一次运行开始建立续播记录。本次观看时长与视频累计播放进度分别计算，失败不会增加成功观看统计。
+
+### 练习生的日常（thxnk.cc）
+
+账号保存于本机 `data/thxnk_accounts.json`（受 Git 忽略）。使用账号密码登录，携带会话与 CSRF Token 调用每日签到接口；服务端按签到日期去重。网站金额以最小单位返回，面板按 100:1 显示为「只因」。运行 `node scripts/thxnk_daily_checkin.js`，或安装 `deploy/thxnk-checkin-daily.service`、`.timer`，每日北京时间 10:13 执行。结果纳入网站汇总和看板。
+
+ZZMEB（`@zzmeb_bot`）分别执行 `/start` →「🎯 签到」→ 算术题选项及 `/start` →「MINIAPP」→ 小程序签到。当前小程序入口为 `https://user.090911.xyz/mini`。两条路径均需明确成功或已签结果，分别保存结果；其中一条失败会提示具体原因，另一条仍继续执行。
+
+## WorkBuddy 签到
+
+工作台左侧提供独立 WorkBuddy 模块。默认使用官方网页登录授权，由服务器获取并保存登录凭据，无需安装 CLI 或粘贴令牌；高级入口仍支持明文凭据 JSON 或旧 WorkBuddy2API 单账号导出格式。账号详情可以更新凭据、查询状态、手动签到；后台任务运行时可以关闭详情页，稍后重新打开查看结果。凭据不会通过详情接口回显，不会传入子进程命令行。
+
+模块复用账号记录、项目汇总和每日报告。签到通过适配器调用上游 `run_daily`，包含每日签到与成长中心；上游源码和 MIT 许可位于 `vendor/workbuddy-auto-signin/`，固定版本见 `REVISION`。Python 3 标准库即可执行。相同 uid 的手动与定时执行由进程锁互斥。认证失败不盲目重试；签到成功但成长中心失败会显示异常，避免错误归为全部成功。累计签到积分不是可用账户余额。
+
+- 账号数据：`data/workbuddy_accounts.json`，文件权限 600。
+- 手动任务：`POST /api/v1/workbuddy/accounts/:id/run`，请求体 `{"action":"auto"}` 或 `{"action":"status"}`；返回 202。
+- 任务查询：`GET /api/v1/workbuddy/accounts/:id/job`。以上接口沿用工作台登录 / App API 认证。
+- 凭据导入：现有 `POST /api/v1/accounts`，provider 为 `workbuddy`，字段为 `workbuddySession`；更新使用对应 PUT 接口。
+- 每日任务：`scripts/workbuddy_daily_checkin.js`；定时模板为 `deploy/workbuddy-checkin-daily.service` 和 `.timer`，每天北京时间 00:05。复用现有每日报告配置。
+- Windows/macOS 的设备绑定加密凭据不支持在此 Linux 服务解密；需要明文登录态。支持导入 `auth.refreshToken`、`expiresAt`、`refreshExpiresAt`，签到或查状态时会在 accessToken 到期前约 1 天刷新（覆盖每日任务间隔），或遇到 401 后刷新重试一次；轮换后的令牌先原子保存，再执行签到。刷新拒绝或结果未知时停止自动重试并提示重新登录。缺少 refreshToken、刷新令牌到期或被撤销时仍需人工登录。Qoder 未包含在此模块。
+
+### Linux 重新登录与自动续期
+
+运行 `codebuddy`，使用交互命令 `/logout`、`/login`，选择国内站并用原签到账号完成浏览器登录。登录后在工作台账号详情更新完整 JSON，或在服务器执行：
+
+```bash
+node scripts/import_workbuddy_auth.js "$HOME/.local/share/CodeBuddyExtension/Data/Public/auth/Tencent-Cloud.coding-copilot.info"
+```
+
+如 CLI 使用自定义 XDG 目录，将参数替换为实际文件路径。导入程序要求包含明文 refreshToken，并仅更新 uid 匹配的现有账号，不打印凭据。自动续期不需要持续运行 CLI；每日任务或手动查询会触发到期检查。不支持通过已过期的 accessToken 推导刷新令牌。
+
+### WorkBuddy 独立面板与官方登录授权
+
+左侧 WorkBuddy 独立管理账号，不再归入网站签到。默认添加流程：填写名称 → 官方登录并添加 → 打开官方授权页 → 完成登录 → 服务器自动保存访问令牌、刷新令牌并执行首轮签到与成长任务。无需在网页粘贴令牌或安装 CLI。每个账号独立保存，UID 重复会拒绝新增；重新授权会核对原账号 UID。手动 JSON 导入和 Linux 文件导入仍作为备用方式。
+
+面板显示每日签到、Buddy 旅行与礼物、成长任务接单与领奖、断登补签、连登奖励兑换、盲盒抽奖、能量开 Buddy 盲盒、成长能量，并展示服务端返回的具体成长子任务。只处理满足条件的奖励，未解锁、旅行中或缺少补登卡不视为已完成。每日 00:05 任务保留；新增 workbuddy-growth-poll.timer，每小时第 20 分钟执行完整幂等检查，及时领回旅行礼物、补派 Buddy 和补跑错过的签到。轮询不发送常规 Telegram 通知。
+
+授权 API：POST /api/v1/workbuddy/logins（名称和可选 accountId）；GET /api/v1/workbuddy/logins/:id 查询；DELETE 取消。登录链接有效期 5 分钟，只有经过工作台认证的用户可操作，访问/刷新令牌不通过接口回显。GET /api/v1/workbuddy/accounts 仅返回 WorkBuddy 账号的脱敏数据。

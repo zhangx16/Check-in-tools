@@ -4206,9 +4206,9 @@
       "id": "terminus",
       "name": "终点站",
       "botUsername": "EmbyPublicBot",
-      "available": false,
+      "available": true,
       "upstreamDefault": true,
-      "reason": "需要专用交互或外部验证，尚未独立适配",
+      "reason": "",
       "commands": [
         "/cancel",
         "/checkin"
@@ -4221,7 +4221,11 @@
         "check-in successful"
       ],
       "checkedKeywords": [
-        "今天已签到"
+        "今天已签到",
+        "今日已签到",
+        "已经签到",
+        "明天再来",
+        "已经签过"
       ],
       "failKeywords": [
         "签到失败",
@@ -4233,14 +4237,14 @@
         "会话已取消",
         "没有活跃的会话"
       ],
-      "useCaptcha": true,
+      "useCaptcha": false,
       "captchaLengths": [],
       "captchaPattern": "",
       "sendInterval": 3,
       "waitResponse": true,
       "isChat": false,
       "requireExistingChat": true,
-      "source": "embykeeper-reference"
+      "source": "local"
     },
     {
       "id": "theend",
@@ -4882,6 +4886,158 @@
       "isChat": false,
       "requireExistingChat": true,
       "source": "embykeeper-reference"
+    },
+    {
+      "botUsername": "DoubonBot",
+      "name": "Doubon",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功"
+      ],
+      "checkedKeywords": [
+        "您今天已经签到过了",
+        "今天已经签到过了",
+        "今天已经签到",
+        "今日已经签到",
+        "今日已签到",
+        "今天已签到",
+        "已经签到过了",
+        "请勿重复签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "targetPhones": [],
+      "sendInterval": 3,
+      "isChat": false,
+      "waitResponse": true,
+      "requireExistingChat": true,
+      "id": "doubon",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "source": "local",
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": ""
+    },
+    {
+      "botUsername": "ChenyuEmby_Bot",
+      "name": "宸宇 Emby",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功",
+        "簽到成功"
+      ],
+      "checkedKeywords": [
+        "您今天已经签到过了",
+        "今天已经签到过了",
+        "今天已经签到",
+        "今日已经签到",
+        "今日已签到",
+        "今天已签到",
+        "已经签到过了",
+        "请勿重复签到"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "targetPhones": [],
+      "sendInterval": 3,
+      "isChat": false,
+      "waitResponse": true,
+      "requireExistingChat": true,
+      "id": "chenyuemby",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "source": "local",
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": ""
+    },
+    {
+      "id": "xgfree",
+      "name": "西瓜公益服",
+      "botUsername": "XGFree_bot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "今天已签到",
+        "已经签到过"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "local"
+    },
+    {
+      "id": "liminal",
+      "name": "Liminal",
+      "botUsername": "liminalembybot",
+      "available": true,
+      "upstreamDefault": false,
+      "reason": "",
+      "commands": [
+        "/start"
+      ],
+      "successKeywords": [
+        "签到成功"
+      ],
+      "checkedKeywords": [
+        "今日已签到",
+        "今天已经签到",
+        "今天已签到",
+        "已经签到过"
+      ],
+      "failKeywords": [
+        "签到失败",
+        "错误",
+        "error",
+        "invalid"
+      ],
+      "textIgnore": [],
+      "useCaptcha": false,
+      "captchaLengths": [],
+      "captchaPattern": "",
+      "sendInterval": 3,
+      "waitResponse": true,
+      "isChat": false,
+      "requireExistingChat": true,
+      "source": "local"
     }
   ]
 }

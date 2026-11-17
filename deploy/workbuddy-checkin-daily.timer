@@ -1,0 +1,9 @@
+[Unit]
+Description=WorkBuddy daily check-in at 00:05 Beijing time
+[Timer]
+OnCalendar=*-*-* 00:05:00 Asia/Shanghai
+Persistent=true
+AccuracySec=1m
+Unit=workbuddy-checkin-daily.service
+[Install]
+WantedBy=timers.target

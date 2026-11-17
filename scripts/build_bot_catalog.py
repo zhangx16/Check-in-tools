@@ -62,5 +62,9 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('source',type=Path);args=parser.parse_args()
     rows=build(args.source)
     output=ROOT/'templates/telegram_bot_catalog.json'
+    if output.exists():
+        local=[r for r in json.loads(output.read_text()).get('bots',[]) if r.get('source')=='local']
+        usernames={r['botUsername'].lower() for r in local}
+        rows=[r for r in rows if r['botUsername'].lower() not in usernames]+local
     output.write_text(json.dumps(dict(source='https://github.com/emby-keeper/emby-keeper',referenceVersion='7.6.1',bots=rows),ensure_ascii=False,indent=2)+'\n')
     print('Bot 目录:',len(rows),'可独立通用适配:',sum(r['available'] for r in rows))

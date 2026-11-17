@@ -1,0 +1,9 @@
+[Unit]
+Description=Check WorkBuddy growth rewards every hour at minute 20
+[Timer]
+OnCalendar=*-*-* *:20:00 Asia/Shanghai
+Persistent=true
+AccuracySec=1m
+Unit=workbuddy-growth-poll.service
+[Install]
+WantedBy=timers.target

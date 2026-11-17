@@ -18,10 +18,14 @@ const {
 } = require("./lib/common");
 
 loadLocalEnv();
+const workbuddy = require("./lib/providers/workbuddy");
+const workbuddyJobs = require("./lib/workbuddy-jobs");
+const workbuddyLogin = require("./lib/workbuddy-login");
 const embyKeepalive = require("./lib/emby-keepalive");
 
 const {
   readAccounts,
+  readProviderAccounts,
   writeAccounts,
   writeProviderAccounts,
   ensureDataFiles: ensureAccountDataFiles
@@ -61,6 +65,8 @@ const BOT_AVATAR_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const SITE_ICON_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const DEFAULT_VPSNAT_BASE_URL = process.env.DEFAULT_VPSNAT_BASE_URL || "https://www.vpsnat.com";
 const PROVIDER_DEFAULT_BASE = {
+  workbuddy: workbuddy.DEFAULT_BASE_URL,
+  thxnk: "https://thxnk.cc",
   zzcat: "https://user.090911.xyz",
   vpsnat: DEFAULT_VPSNAT_BASE_URL,
   glados: DEFAULT_GLADOS_BASE_URL,
@@ -68,6 +74,8 @@ const PROVIDER_DEFAULT_BASE = {
   embymb: DEFAULT_EMBYMB_BASE_URL
 };
 const PROVIDER_LABELS = {
+  workbuddy: "WorkBuddy",
+  thxnk: "练习生的日常",
   zzcat: "这只猫用户中心",
   vpsnat: "VPSNAT 纳泰云",
   glados: "GLaDOS",
@@ -131,7 +139,7 @@ function applyProjectNames(projects) {
 }
 
 function isPasswordProvider(provider) {
-  return ["embypulse", "embymb", "vpsnat"].includes(provider);
+  return ["thxnk", "embypulse", "embymb", "vpsnat"].includes(provider);
 }
 
 function ensureEmbykeeperConfigFile() {
@@ -452,6 +460,19 @@ function runEmbykeeperOnce() {
   });
 }
 
+function workbuddyAuthInfo(account) {
+  try {
+    const session = workbuddy.normalizeSession(account.workbuddySession);
+    const { expiry } = require('./lib/workbuddy-auth');
+    const access = expiry(session.auth), refresh = expiry(session.auth, true);
+    return { hasRefreshToken: Boolean(session.auth.refreshToken),
+      expiresAt: Number.isFinite(access) ? new Date(access).toISOString() : null,
+      refreshExpiresAt: Number.isFinite(refresh) ? new Date(refresh).toISOString() : null,
+      expired: Number.isFinite(access) && access <= Date.now(),
+      refreshExpired: Number.isFinite(refresh) && refresh <= Date.now() };
+  } catch { return { hasRefreshToken: false, expired: true, refreshExpired: false }; }
+}
+
 function toPublicAccount(account) {
   const provider = String(account.provider || "glados").trim().toLowerCase() || "glados";
   return {
@@ -459,11 +480,12 @@ function toPublicAccount(account) {
     provider,
     providerLabel: providerLabel(provider),
     name: account.name,
+    ...(provider === 'workbuddy' ? { enabled: account.enabled !== false, workbuddyAuth: workbuddyAuthInfo(account) } : {}),
     baseUrl: account.baseUrl,
     notes: account.notes || "",
     createdAt: account.createdAt || "",
     updatedAt: account.updatedAt || "",
-    authPreview: isPasswordProvider(provider)
+    authPreview: provider === "workbuddy" ? (account.workbuddySession ? "WorkBuddy 凭据已保存" : "未保存凭据") : isPasswordProvider(provider)
       ? `账号: ${account.username || "未保存"}`
       : `Cookie: ${cookiePreview(account.cookie) || "未保存"}`,
     lastStatusAt: account.lastStatusAt || "",
@@ -477,6 +499,7 @@ function toPublicAccountDetail(account) {
   const provider = String(account.provider || "glados").trim().toLowerCase() || "glados";
   return {
     ...toPublicAccount(account),
+    ...(provider === "workbuddy" ? { hasWorkbuddySession: Boolean(account.workbuddySession) } : {}),
     cookie: account.cookie || "",
     username: account.username || "",
     password: account.password || "",
@@ -491,6 +514,7 @@ function toMobileAccountDetail(account) {
   const provider = publicAccount.provider;
   return {
     ...publicAccount,
+    ...(provider === "workbuddy" ? { hasWorkbuddySession: Boolean(account.workbuddySession) } : {}),
     baseUrl: account.baseUrl || "",
     cookie: provider === "glados" ? account.cookie || "" : "",
     username: isPasswordProvider(provider) ? account.username || "" : "",
@@ -716,6 +740,8 @@ function removePhoneFromTelegramBot(botUsername, phone) {
 }
 
 function normalizeProvider(value) {
+  if (String(value || "").trim().toLowerCase() === "workbuddy") return "workbuddy";
+  if (String(value || "").trim().toLowerCase() === "thxnk") return "thxnk";
   if (String(value || "").trim().toLowerCase() === "zzcat") return "zzcat";
   const raw = String(value || "").trim().toLowerCase();
   if (raw === "embypulse") return "embypulse";
@@ -731,7 +757,7 @@ function normalizeAccountInput(body = {}, current = {}) {
   const username = String(body.username ?? current.username ?? "").trim();
   const password = String(body.password ?? current.password ?? "").trim();
   const insecureTls = Boolean(body.insecureTls ?? current.insecureTls ?? false);
-  const baseFallback = provider === "zzcat" ? PROVIDER_DEFAULT_BASE.zzcat : provider === "vpsnat" ? DEFAULT_VPSNAT_BASE_URL : provider === "embypulse"
+  const baseFallback = provider === "workbuddy" ? workbuddy.DEFAULT_BASE_URL : provider === "thxnk" ? PROVIDER_DEFAULT_BASE.thxnk : provider === "zzcat" ? PROVIDER_DEFAULT_BASE.zzcat : provider === "vpsnat" ? DEFAULT_VPSNAT_BASE_URL : provider === "embypulse"
     ? DEFAULT_EMBYPULSE_BASE_URL
     : provider === "embymb"
       ? DEFAULT_EMBYMB_BASE_URL
@@ -743,6 +769,12 @@ function normalizeAccountInput(body = {}, current = {}) {
     provider,
     name,
     baseUrl: normalizeBaseUrl(body.baseUrl ?? current.baseUrl ?? baseFallback, baseFallback),
+    ...(provider === "workbuddy" ? { enabled: body.enabled === undefined ? current.enabled !== false : Boolean(body.enabled), workbuddySession: (() => {
+      const input = body.workbuddySession ?? body.session ?? current.workbuddySession;
+      if (!input) return null;
+      try { return workbuddy.normalizeSession(input); }
+      catch { return null; }
+    })() } : {}),
     ...(provider === "vpsnat" ? { token: String(body.token ?? current.token ?? "").trim(), refreshToken: String(body.refreshToken ?? current.refreshToken ?? "").trim() } : {}),
     cookie: ["glados", "zzcat"].includes(provider) ? cookie : "",
     username: isPasswordProvider(provider) ? username : "",
@@ -763,6 +795,17 @@ function validateAccount(account) {
     return "账号名称不能为空";
   }
 
+  if (account.provider === "workbuddy") {
+    const invalid = workbuddy.validateAccount(account);
+    if (invalid) return invalid;
+    const uid = workbuddy.normalizeSession(account.workbuddySession).account.uid;
+    const duplicate = readProviderAccounts('workbuddy').some(a => {
+      try { return a.id !== account.id && workbuddy.normalizeSession(a.workbuddySession).account.uid === uid; }
+      catch { return false; }
+    });
+    return duplicate ? '该 WorkBuddy 账号已添加，请更新现有账号的凭据' : '';
+  }
+
   if (isPasswordProvider(account.provider)) {
     if (!account.username) {
       return "用户名不能为空";
@@ -772,6 +815,11 @@ function validateAccount(account) {
     }
   } else if (!account.cookie) {
     return "Cookie 不能为空";
+  }
+
+  if (account.provider === "zzcat" &&
+      (/[\r\n]/.test(account.cookie) || !/(?:^|;\s*)qp_session=[^;\s]+(?:;|$)/.test(account.cookie))) {
+    return "请输入包含 qp_session=会话值 的 Cookie";
   }
 
   try {
@@ -952,6 +1000,7 @@ function deriveWebsiteItemStatus(account) {
   const status = account.lastStatus || null;
 
   if (checkin) {
+    if (account.provider === "workbuddy" && checkin.ok === false) return "failed";
     if (checkin.skipped) return "skipped";
     if (checkin.already === true || isAlreadyCheckedInMessage(checkin.message)) return "already";
     if (checkin.ok === true) return "success";
@@ -995,7 +1044,7 @@ function mapWebsiteAccountToSummaryItem(account) {
 
   return {
     id: String(account.id || ""),
-    kind: "website",
+    kind: provider === "workbuddy" ? "workbuddy" : "website",
     provider,
     providerLabel: providerLabel(provider),
     accountName: account.name || "",
@@ -1493,7 +1542,7 @@ async function buildSummaryProjects(websiteItems, telegramItems, req) {
     const avatarURL = iconPath ? `${base}${iconPath}` : null;
     return {
       id: `web:${provider}`,
-      kind: "website",
+      kind: provider === "workbuddy" ? "workbuddy" : "website",
       provider,
       providerLabel: providerLabel(provider),
       title: providerLabel(provider),
@@ -1700,16 +1749,21 @@ async function runBatch(accounts, ids, worker) {
   }
 
   const concurrency = Math.max(1, Number(process.env.CHECKIN_CONCURRENCY || 4));
-  const processedList = await runConcurrent(selected, worker, concurrency);
+  const processedList = await runConcurrent(selected, account => {
+    if (account.provider !== "workbuddy") return worker(account);
+    const job = workbuddyJobs.launch(account.id, worker === refreshAccountStatus ? "status" : "auto");
+    return { account, summary: { id: account.id, name: account.name, queued: true, job,
+      checkin: { ok: false, message: "WorkBuddy 已转入后台执行，请查看任务结果" } } };
+  }, concurrency);
   const updatedById = new Map();
   const results = [];
 
   for (const processed of processedList) {
-    updatedById.set(processed.account.id, processed.account);
+    if (processed.account.provider !== "workbuddy") updatedById.set(processed.account.id, processed.account);
     results.push(processed.summary);
   }
 
-  const nextAccounts = accounts.map((item) => updatedById.get(item.id) || item);
+  const nextAccounts = readAccounts().map((item) => updatedById.get(item.id) || item);
   return {
     accounts: nextAccounts,
     results
@@ -1800,6 +1854,35 @@ async function handleApi(req, res, url) {
         }
         sendJson(res,404,{error:"Not Found"});
       } catch(error) { sendJson(res,error.status || 400,{error:error.message || "Emby 保活操作失败"}); }
+      return;
+    }
+
+    if (pathname === '/api/v1/workbuddy/accounts' && method === 'GET') {
+      sendJson(res, 200, { accounts: readProviderAccounts('workbuddy').map(toPublicAccount) });
+      return;
+    }
+    if (pathname === '/api/v1/workbuddy/logins' && method === 'POST') {
+      try { sendJson(res, 201, await workbuddyLogin.create(await readRequestBody(req), id => workbuddyJobs.launch(id, 'auto'))); }
+      catch (error) { sendJson(res, error.status || 400, { error: error.message }); }
+      return;
+    }
+    const wbLoginMatch = pathname.match(/^\/api\/v1\/workbuddy\/logins\/([a-f0-9]{48})$/);
+    if (wbLoginMatch && ['GET', 'DELETE'].includes(method)) {
+      try { sendJson(res, 200, method === 'DELETE' ? workbuddyLogin.cancel(wbLoginMatch[1]) : workbuddyLogin.get(wbLoginMatch[1])); }
+      catch (error) { sendJson(res, error.status || 400, { error: error.message }); }
+      return;
+    }
+    const wbJobMatch = pathname.match(/^\/api\/v1\/workbuddy\/accounts\/([^/]+)\/(run|job)$/);
+    if (wbJobMatch) {
+      try {
+        const id = decodeURIComponent(wbJobMatch[1]);
+        if (method === "POST" && wbJobMatch[2] === "run") {
+          const body = await readRequestBody(req);
+          sendJson(res, 202, workbuddyJobs.launch(id, body?.action || "auto")); return;
+        }
+        if (method === "GET" && wbJobMatch[2] === "job") { sendJson(res, 200, workbuddyJobs.get(id)); return; }
+        sendJson(res, 405, { error: "不支持的请求方式" });
+      } catch (error) { sendJson(res, error.status || 400, { error: error.message }); }
       return;
     }
 
@@ -2049,8 +2132,9 @@ async function handleApi(req, res, url) {
         sendJson(res, 404, { error: "账号不存在" });
         return;
       }
-      const processed = await runAccountCheckin(account);
-      const nextAccounts = accounts.map((item) => (item.id === accountId ? processed.account : item));
+      if (account.provider === "workbuddy") { sendJson(res, 202, workbuddyJobs.launch(accountId, "auto")); return; }
+    const processed = await runAccountCheckin(account);
+      const nextAccounts = readAccounts().map((item) => (item.id === accountId ? processed.account : item));
       writeAccounts(nextAccounts);
       sendJson(res, 200, {
         ok: Boolean(processed.summary?.checkin?.ok ?? processed.account?.lastCheckin?.ok),
@@ -2316,8 +2400,9 @@ async function handleApi(req, res, url) {
       return;
     }
 
+    if (account.provider === "workbuddy") { sendJson(res, 202, workbuddyJobs.launch(accountId, "status")); return; }
     const processed = await refreshAccountStatus(account);
-    const nextAccounts = accounts.map((item) => (item.id === accountId ? processed.account : item));
+    const nextAccounts = readAccounts().map((item) => (item.id === accountId ? processed.account : item));
     writeAccounts(nextAccounts);
     sendJson(res, 200, { result: processed.summary, account: toPublicAccount(processed.account) });
     return;
@@ -2334,8 +2419,9 @@ async function handleApi(req, res, url) {
       return;
     }
 
+    if (account.provider === "workbuddy") { sendJson(res, 202, workbuddyJobs.launch(accountId, "auto")); return; }
     const processed = await runAccountCheckin(account);
-    const nextAccounts = accounts.map((item) => (item.id === accountId ? processed.account : item));
+    const nextAccounts = readAccounts().map((item) => (item.id === accountId ? processed.account : item));
     writeAccounts(nextAccounts);
     sendJson(res, 200, { result: processed.summary, account: toPublicAccount(processed.account) });
     return;
@@ -2360,7 +2446,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if ((req.method === "GET" || req.method === "HEAD") &&
-        /^\/dashboard\/(?:index\.html|dashboard-runtime\.js|dashboard-patches\.css|emby-keepalive\.js|reference-\d+\.css)?$/.test(url.pathname)) {
+        /^\/dashboard\/(?:index\.html|dashboard-runtime\.js|workbuddy-ui\.js|dashboard-patches\.css|emby-keepalive\.js|reference-\d+\.css)?$/.test(url.pathname)) {
       if (url.pathname === "/dashboard/") url.pathname += "index.html";
       serveStatic(req, res, url);
       return;

@@ -21,6 +21,7 @@ API_ID = os.environ.get("TELEGRAM_API_ID", "")
 API_HASH = os.environ.get("TELEGRAM_API_HASH", "")
 from telegram_bot_renewal import run_renewal
 from telegram_captcha import answer_captcha
+from telegram_visual import visual_enabled, authorize as authorize_visual, answer_challenge, claim_attempt
 
 PROJECT_ROOT = Path(os.environ.get("CHECKIN_PROJECT_ROOT", Path(__file__).resolve().parents[1])).resolve()
 DATA_DIR = PROJECT_ROOT / "data"
@@ -41,6 +42,8 @@ FYEMBY_SIGNIN_BUTTON = "🎯 签到"
 OICOVO_SIGNIN_BUTTON = "🎯 签到"
 MOONKK_SIGNIN_BUTTON = "✅ 签到"
 MENU_SIGNIN_BUTTONS = {
+    "chenyuemby_bot": "🎯 签到",
+    "doubonbot": "🎯 签到",
     "fyemby_bot": FYEMBY_SIGNIN_BUTTON,
     "oicovo_bot": OICOVO_SIGNIN_BUTTON,
     "shrekpublic_bot": "🎯 签到",
@@ -48,11 +51,11 @@ MENU_SIGNIN_BUTTONS = {
     "chapanda3_bot": "🎯 签到",
     "micu_user_bot": "🎯 签到",
     "wybtcok_bot": "✅ 每日签到",
-    "lewa_user_bot": "📅 每日签到",
+    "lewa_user_bot": "✅ 每日签到",
 }
 MOONKK_WEBAPP_HOST = "embyguard.com"
 ZZMEB_SIGNIN_BUTTON = "🎯 签到"
-ZZMEB_MINIAPP_ORIGIN = "https://miniapp.ftp2.eu.org"
+ZZMEB_MINIAPP_ORIGIN = "https://user.090911.xyz"
 GARYSCLUB_BOT = "garysclubsubbot"
 GARYSCLUB_GATE_HINTS = ["尚未加入", "验证开通", "我已加入，重新验证"]
 HARD_SKIP_HINTS = [
@@ -185,6 +188,9 @@ def save_checkin_results(results: list[dict], merge_existing: bool = False):
                 "message": str(bot_result.get("message", "")).strip(),
                 "checkedAt": now
             }
+            for channel in ("button", "miniapp"):
+                if isinstance(bot_result.get(channel), dict):
+                    item[channel] = bot_result[channel]
             record["accounts"].append(item)
             if bot_result.get("renewal"):
                 item["renewal"] = bot_result["renewal"]
@@ -223,6 +229,8 @@ def is_account_status_reason(reason: str) -> bool:
     content = str(reason or "")
     if not content:
         return False
+    if "远端图片识别尚未授权启用" in content:
+        return True
     if any(hint in content for hint in HARD_SKIP_HINTS):
         return False
     return any(hint in content for hint in ACCOUNT_STATUS_HINTS)
@@ -640,13 +648,23 @@ async def run_menu_signin_checkin(client: Client, bot: dict, signin_button: str)
 
             keyboard = getattr(message.reply_markup, "inline_keyboard", None) or []
             button_texts = [str(button.text or "").strip() for row in keyboard for button in row]
-            if signin_button not in button_texts:
+            actual_signin_button = signin_button
+            if target.lower() == "lewa_user_bot":
+                # Lewa changes the label emoji; the callback identifies the sign-in action.
+                actual_signin_button = next(
+                    (button.text for row in keyboard for button in row
+                     if getattr(button, "callback_data", None) == "ub_menu_checkin"),
+                    signin_button,
+                )
+            if actual_signin_button not in button_texts:
                 continue
 
             try:
+                # Lewa may finish processing after the shared five-second callback timeout.
+                callback_timeout = 30 if target.lower() == "lewa_user_bot" else 5
                 click_result = await asyncio.wait_for(
-                    message.click(signin_button, timeout=5),
-                    timeout=8
+                    message.click(actual_signin_button, timeout=callback_timeout),
+                    timeout=callback_timeout + 3
                 )
                 answer = str(getattr(click_result, "message", "") or "").strip()
                 evaluated = evaluate_message(answer, bot)
@@ -656,15 +674,16 @@ async def run_menu_signin_checkin(client: Client, bot: dict, signin_button: str)
                 pass
 
             answered_challenges = set()
-            for _ in range(20 if target.lower() == "micu_user_bot" else 8):
+            for _ in range(20 if target.lower() in {"micu_user_bot", "zzmeb_bot"} else 8):
                 async for followup in client.get_chat_history(target, limit=10):
                     if followup.outgoing:
                         continue
                     followup_time = followup.edit_date or followup.date
                     if followup_time and followup_time.replace(tzinfo=timezone.utc) < start_time:
                         continue
-                    if target.lower() == "micu_user_bot":
-                        challenge = micu_arithmetic_answer(followup)
+                    if target.lower() in {"micu_user_bot", "zzmeb_bot"}:
+                        challenge = (zzmeb_arithmetic_answer(followup) if target.lower() == "zzmeb_bot"
+                                     else micu_arithmetic_answer(followup))
                         if challenge:
                             button_text, expression = challenge
                             challenge_key = (followup.id, expression)
@@ -687,7 +706,7 @@ async def run_menu_signin_checkin(client: Client, bot: dict, signin_button: str)
                         return followup_result
                 await asyncio.sleep(1)
 
-            if target.lower() in {"micu_user_bot", "wybtcok_bot", "lewa_user_bot"}:
+            if target.lower() in {"micu_user_bot", "zzmeb_bot", "wybtcok_bot", "lewa_user_bot", "doubonbot", "chenyuemby_bot"}:
                 return {
                     "ok": False,
                     "already": False,
@@ -723,6 +742,33 @@ def micu_arithmetic_answer(message: Message):
     return None
 
 
+def zzmeb_arithmetic_answer(message: Message):
+    """Solve an explicit arithmetic challenge and select only its answer button."""
+    text = message.text or message.caption or ""
+    if not any(hint in text for hint in ("签到", "簽到", "验证", "驗證", "答题", "計算", "计算")):
+        return None
+    match = re.search(r"(?<![\d.])(-?\d{1,6})\s*([+＋\-−－*×xX÷/])\s*(-?\d{1,6})\s*[=＝]\s*[?？]", text)
+    if not match:
+        return None
+    left, operator, right = match.groups()
+    left, right = int(left), int(right)
+    if operator in ("+", "＋"):
+        answer = left + right
+    elif operator in ("-", "−", "－"):
+        answer = left - right
+    elif operator in ("*", "×", "x", "X"):
+        answer = left * right
+    else:
+        if right == 0 or left % right:
+            return None
+        answer = left // right
+    for button in iter_inline_buttons(message):
+        label = str(getattr(button, "text", "") or "").strip()
+        if label == str(answer) and getattr(button, "callback_data", None):
+            return label, match.group(0)
+    return None
+
+
 def extract_webapp_init_data(url: str) -> str:
     fragment = parse_qs(urlparse(url).fragment)
     return str((fragment.get("tgWebAppData") or [""])[0] or "")
@@ -743,6 +789,9 @@ def moonkk_checkin_api_url(webapp_url: str) -> tuple[str, str]:
 
 
 def post_moonkk_checkin(webapp_url: str, init_data: str) -> dict:
+    if (DATA_DIR / "peak_solver.json").exists():
+        from telegram_cf_checkin import post_moonkk
+        return post_moonkk(webapp_url, init_data, DATA_DIR)
     origin, api_url = moonkk_checkin_api_url(webapp_url)
     body = json.dumps({"init_data": init_data}).encode("utf-8")
     request = urllib.request.Request(
@@ -792,7 +841,7 @@ def evaluate_moonkk_api_payload(payload: dict):
         message = "今日已经签到" + (f"，{wallet_text}" if wallet_text else "")
         return {"ok": True, "already": True, "skipped": False, "message": message}
     if status == "pending":
-        return {"ok": True, "already": False, "skipped": False, "message": "签到结果待核对，请勿重复签到"}
+        return {"ok": False, "already": False, "skipped": False, "message": "签到结果待核对，请勿重复签到"}
     if data.get("site_key") or data.get("challenge"):
         return {
             "ok": False,
@@ -815,6 +864,41 @@ def find_moonkk_webapp_url(message: Message) -> str:
             if "mode=checkin" in url or "checkin" in url.lower() or "签到" in label or label == MOONKK_SIGNIN_BUTTON:
                 return url
     return ""
+
+
+async def run_ccw_checkin(client: Client, bot: dict):
+    from telegram_ccw_checkin import find_checkin_url, checkin_miniapp
+    target = bot["botUsername"]
+    start_time = datetime.now(timezone.utc) - MESSAGE_TIME_SLOP
+    await client.send_message(target, "/start")
+    await asyncio.sleep(bot["sendInterval"])
+    for _ in range(8):
+        async for message in client.get_chat_history(target, limit=8):
+            if message.outgoing:
+                continue
+            stamp = message.edit_date or message.date
+            if stamp and stamp.replace(tzinfo=timezone.utc) < start_time:
+                continue
+            result = evaluate_incoming_message(message, bot)
+            if result:
+                return result
+            url = find_checkin_url(message)
+            if not url:
+                continue
+            peer = await client.resolve_peer(target)
+            view = await client.invoke(raw.functions.messages.RequestWebView(
+                peer=peer, bot=as_input_user(peer), platform="android", url=url))
+            init_data = extract_webapp_init_data(getattr(view, "url", "") or "")
+            try:
+                return await asyncio.to_thread(checkin_miniapp, init_data)
+            except RuntimeError as error:
+                if is_account_status_reason(str(error)):
+                    return {"ok": True, "already": False, "skipped": True,
+                            "message": str(error)}
+                raise
+        await asyncio.sleep(1)
+    return {"ok": False, "already": False, "skipped": False,
+            "message": "未找到 Ccbot 签到小程序按钮"}
 
 
 async def run_moonkk_checkin(client: Client, bot: dict):
@@ -910,7 +994,7 @@ def post_zzmeb_miniapp_checkin(init_data: str) -> dict:
     jar = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
     auth = zzmeb_miniapp_request(opener, "/api/auth/telegram", {"initData": init_data})
-    if auth.get("ok") is False:
+    if auth.get("ok") is not True:
         raise RuntimeError(str(auth.get("message") or "MiniApp 登录失败").strip())
     return zzmeb_miniapp_request(opener, "/api/user/checkin", {})
 
@@ -918,7 +1002,7 @@ def post_zzmeb_miniapp_checkin(init_data: str) -> dict:
 def evaluate_zzmeb_miniapp_payload(payload: dict):
     data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
     message = str(payload.get("message") or "").strip()
-    if payload.get("ok") is False:
+    if payload.get("ok") is not True:
         return {
             "ok": False,
             "already": False,
@@ -935,6 +1019,9 @@ def evaluate_zzmeb_miniapp_payload(payload: dict):
         if score is not None:
             parts.append(f"当前积分 {score}")
         return {"ok": True, "already": False, "skipped": False, "message": "，".join(parts)}
+    if awarded is not False:
+        return {"ok": False, "already": False, "skipped": False,
+                "message": "MiniApp 未返回明确签到结果"}
     already_text = message or "今天已经签到过了"
     if score is not None and "余额" not in already_text and "积分" not in already_text:
         already_text = f"{already_text}，当前积分 {score}"
@@ -954,32 +1041,63 @@ def merge_dual_checkin(button_result: dict, miniapp_result: dict):
     ]
     already = [item for item in results if item.get("already")]
     skipped = [item for item in results if item.get("skipped")]
-    if awarded:
-        status = {"ok": True, "already": False, "skipped": False}
-    elif failed and not already:
+    if failed:
         status = {"ok": False, "already": False, "skipped": False}
-    elif already and not failed:
+    elif awarded:
+        status = {"ok": True, "already": False, "skipped": False}
+    elif already:
         status = {"ok": True, "already": True, "skipped": False}
     elif skipped and len(skipped) == len(results):
         status = {"ok": True, "already": False, "skipped": True}
-    elif failed:
-        status = {"ok": False, "already": False, "skipped": False}
     else:
         status = {"ok": True, "already": False, "skipped": False}
     status["message"] = "；".join(parts)
+    status["button"] = button_result
+    status["miniapp"] = miniapp_result
     return status
 
 
 async def run_zzmeb_miniapp_checkin(client: Client, bot: dict):
     target = bot["botUsername"]
     peer = await client.resolve_peer(target)
-    webview = await client.invoke(
-        raw.functions.messages.RequestMainWebView(
-            peer=peer,
-            bot=as_input_user(peer),
-            platform="android",
-        )
-    )
+    # Open the MINIAPP entry from /start when supplied as a web_app button.
+    # Older menus link to the bot's main app, for which RequestMainWebView is used.
+    start_time = datetime.now(timezone.utc) - MESSAGE_TIME_SLOP
+    await client.send_message(target, "/start")
+    await asyncio.sleep(bot["sendInterval"])
+    app_url = ""
+    for _ in range(8):
+        found_entry = False
+        async for message in client.get_chat_history(target, limit=8):
+            if message.outgoing:
+                continue
+            stamp = message.edit_date or message.date
+            if stamp and stamp.replace(tzinfo=timezone.utc) < start_time:
+                continue
+            for button in iter_inline_buttons(message):
+                label = str(getattr(button, "text", "") or "").lower().replace(" ", "")
+                if "miniapp" not in label and "小程序" not in label:
+                    continue
+                found_entry = True
+                app = getattr(button, "web_app", None)
+                candidate = str(getattr(app, "url", "") or "")
+                if candidate:
+                    if urlparse(candidate).scheme != "https" or urlparse(candidate).netloc != urlparse(ZZMEB_MINIAPP_ORIGIN).netloc:
+                        raise RuntimeError("MINIAPP 入口域名发生变化，需要核实接口")
+                    app_url = candidate
+                break
+            if found_entry:
+                break
+        if found_entry:
+            break
+        await asyncio.sleep(1)
+    if app_url:
+        request = raw.functions.messages.RequestWebView(
+            peer=peer, bot=as_input_user(peer), platform="android", url=app_url)
+    else:
+        request = raw.functions.messages.RequestMainWebView(
+            peer=peer, bot=as_input_user(peer), platform="android")
+    webview = await client.invoke(request)
     init_data = extract_webapp_init_data(getattr(webview, "url", "") or "")
     if not init_data:
         return {"ok": False, "already": False, "skipped": False, "message": "未能打开 MiniApp 面板"}
@@ -996,7 +1114,11 @@ async def run_zzmeb_miniapp_checkin(client: Client, bot: dict):
 
 
 async def run_zzmeb_checkin(client: Client, bot: dict):
-    button_result = await run_menu_signin_checkin(client, bot, ZZMEB_SIGNIN_BUTTON)
+    try:
+        button_result = await run_menu_signin_checkin(client, bot, ZZMEB_SIGNIN_BUTTON)
+    except Exception as error:
+        button_result = {"ok": False, "already": False, "skipped": False,
+                         "message": str(error) or "按钮签到失败"}
     try:
         miniapp_result = await run_zzmeb_miniapp_checkin(client, bot)
     except Exception as error:
@@ -1035,13 +1157,87 @@ async def run_garysclub_checkin(client: Client, bot: dict):
     return {"ok": False, "already": False, "skipped": False, "message": "等待 Bot 回复超时"}
 
 
+async def run_cf_webapp_checkin(client: Client, bot: dict):
+    from telegram_cf_checkin import post_liminal, verify_xg, config as cf_config
+    target = bot["botUsername"]
+    if target.lower() in cf_config(DATA_DIR).get("pausedBots", []):
+        return {"ok": False, "already": False, "skipped": False,
+                "message": "此 Bot 的自动识别暂缓：实测提交返回 HTTP 403，避免重复付费；待确认原因后启用"}
+    is_xg = target.lower() == "xgfree_bot"
+    start_time = datetime.now(timezone.utc) - MESSAGE_TIME_SLOP
+    await client.send_message(target, "/start")
+    await asyncio.sleep(bot["sendInterval"])
+    clicked = set()
+    verified = False
+    for _ in range(20):
+        async for message in client.get_chat_history(target, limit=8):
+            if message.outgoing:
+                continue
+            when = message.edit_date or message.date
+            if when and when.replace(tzinfo=timezone.utc) < start_time:
+                continue
+            keyboard = getattr(message.reply_markup, "inline_keyboard", None) or []
+            buttons = [b for row in keyboard for b in row]
+            web_button = next((b for b in buttons if getattr(b, "web_app", None)
+                               and ("verify.xghub.de/" in b.web_app.url if is_xg
+                                    else "liminal-embyboss.liminalnet.us/checkin/" in b.web_app.url)), None)
+            if web_button and not verified:
+                verified = True
+                if is_xg:
+                    start_param = await asyncio.to_thread(verify_xg, web_button.web_app.url, DATA_DIR)
+                    await client.send_message(target, "/start " + start_param)
+                    await asyncio.sleep(bot["sendInterval"])
+                    break
+                peer = await client.resolve_peer(target)
+                webview = await client.invoke(raw.functions.messages.RequestWebView(
+                    peer=peer, bot=peer, platform="android", url=web_button.web_app.url))
+                init_data = extract_webapp_init_data(getattr(webview, "url", "") or "")
+                if not init_data:
+                    return {"ok": False, "already": False, "skipped": False,
+                            "message": "未取得 Liminal 小程序授权"}
+                return await asyncio.to_thread(post_liminal, web_button.web_app.url, init_data, DATA_DIR)
+            # A panel may contain 'unregistered' yet still allow earning points.
+            if not web_button:
+                result = evaluate_incoming_message(message, bot)
+                if result:
+                    return result
+            if is_xg and not verified:
+                button = next((b for b in buttons if getattr(b, "callback_data", None) == "checkin"), None)
+                if button and message.id not in clicked:
+                    clicked.add(message.id)
+                    try:
+                        answer = await asyncio.wait_for(message.click(button.text, timeout=4), timeout=6)
+                        evaluated = evaluate_message(str(getattr(answer, "message", "") or ""), bot)
+                        if evaluated:
+                            return evaluated
+                    except Exception:
+                        pass
+                    await asyncio.sleep(1)
+                    break
+        await asyncio.sleep(1)
+    return {"ok": False, "already": False, "skipped": False,
+            "message": "安全验证后未收到签到确认" if verified else "未找到签到验证小程序"}
+
+
 async def run_single_bot(client: Client, bot: dict):
+    if bot["botUsername"].lower() == "embypublicbot":
+        if not visual_enabled(DATA_DIR):
+            return {"ok": True, "already": False, "skipped": True,
+                    "message": "远端图片识别尚未授权启用，未发起签到"}
     if bot.get("requireExistingChat"):
         async for existing in client.get_chat_history(bot["botUsername"], limit=1):
             break
         else:
             return {"ok": True, "already": False, "skipped": True, "message": "尚未与该 Bot 聊天，请先打开并注册"}
     target = bot["botUsername"]
+    if target.lower() == "embypublicbot":
+        try:
+            await authorize_visual(client)
+        except Exception as error:
+            return {"ok": False, "already": False, "skipped": False,
+                    "message": f"视觉服务授权失败，未发起签到：{error}"}
+    if target.lower() in {"xgfree_bot", "liminalembybot"}:
+        return await run_cf_webapp_checkin(client, bot)
     if target == "gymeowfly_bot":
         print(f"[{client.phone_number}] 开始签到 {bot['name']} (@{bot['botUsername']})", flush=True)
         result = await run_gymeow_checkin(client, bot)
@@ -1059,6 +1255,9 @@ async def run_single_bot(client: Client, bot: dict):
             flush=True
         )
         return result
+
+    if target.lower() == "ccwuser_bot":
+        return await run_ccw_checkin(client, bot)
 
     if target.lower() == "moonkkbot":
         print(f"[{client.phone_number}] 开始签到 {bot['name']} (@{bot['botUsername']})", flush=True)
@@ -1110,6 +1309,10 @@ async def run_single_bot(client: Client, bot: dict):
 
     for command in bot["commands"]:
         if command:
+            if target.lower() == "embypublicbot" and command == "/checkin":
+                if not claim_attempt(DATA_DIR, client.phone_number):
+                    return {"ok": False, "already": False, "skipped": False,
+                            "message": "今日已发起过图片签到，请核对已有结果；不重复消耗签到机会"}
             sent = await client.send_message(target, command)
             sent_command_ids.add(sent.id)
             await asyncio.sleep(bot["sendInterval"])
@@ -1158,6 +1361,14 @@ async def run_single_bot(client: Client, bot: dict):
         for message in messages:
             seen_ids.add((message.id, message.edit_date, message.text or message.caption or ""))
             message_text = message.text or message.caption or ""
+            if target.lower() == "embypublicbot" and "点击图中事物" in message_text:
+                try:
+                    await answer_challenge(client, message)
+                except Exception as error:
+                    return {"ok": False, "already": False, "skipped": False,
+                            "message": f"图片验证未能确认完成（{type(error).__name__}）：{error}；当天不自动重试"}
+                deadline = max(deadline, asyncio.get_event_loop().time() + 5)
+                continue
             if bot.get("requireExistingChat") and getattr(message, "photo", None):
                 try:
                     if await answer_captcha(client, message, bot):

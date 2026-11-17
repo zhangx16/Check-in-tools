@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Thxnk daily check-in at 10:13 Beijing time
+
+[Timer]
+OnCalendar=*-*-* 02:13:00 UTC
+Persistent=true
+AccuracySec=1m
+Unit=thxnk-checkin-daily.service
+
+[Install]
+WantedBy=timers.target

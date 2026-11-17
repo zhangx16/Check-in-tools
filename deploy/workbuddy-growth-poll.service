@@ -1,0 +1,10 @@
+[Unit]
+Description=Check WorkBuddy daily rewards and growth tasks hourly
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+WorkingDirectory=/root/glados-checkin-web
+EnvironmentFile=-/root/glados-checkin-web/.env
+ExecStart=/usr/bin/node /root/glados-checkin-web/scripts/workbuddy_growth_poll.js
+TimeoutStartSec=1h

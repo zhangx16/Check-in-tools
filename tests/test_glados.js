@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const { runAccountCheckin, shouldRetryCheckin } = require("../lib/providers/glados");
 const { runWithRetries } = require("../lib/daily");
+const gladosCF = require("../lib/glados-cf");
 
 async function runCase(payloads, retry = false) {
   const calls = [];
@@ -40,5 +41,25 @@ async function runCase(payloads, retry = false) {
   assert.equal(exhausted.result.account.lastCheckin.ok, false);
   assert.equal(exhausted.result.account.lastCheckin.attemptCount, 3);
   assert.equal(shouldRetryCheckin({ code: 4 }, 1, 3), false);
+  const originalSolver = gladosCF.solveCheckin;
+  try {
+    let solves = 0;
+    gladosCF.solveCheckin = async (account, ua) => {
+      solves++;
+      assert.equal(account.cookie, "test=value");
+      assert.ok(ua.includes("Mozilla"));
+      return { code: 0, points: 2, message: "Checkin! Got 2 Points" };
+    };
+    const verified = await runCase([{ code: 5, reason: "turnstile" }, { code: 0 }]);
+    assert.equal(verified.result.summary.checkin.ok, true);
+    assert.equal(verified.result.summary.checkin.points, 2);
+    assert.equal(solves, 1);
+    gladosCF.solveCheckin = async () => { throw new Error("Peak unavailable"); };
+    const failed = await runCase([{ code: 5, reason: "turnstile" }]);
+    assert.equal(failed.result.summary.checkin.ok, false);
+    assert.equal(failed.result.summary.checkin.message, "Peak unavailable");
+  } finally {
+    gladosCF.solveCheckin = originalSolver;
+  }
   console.log("GLaDOS authorization recovery tests passed");
 })().catch(error => { console.error(error); process.exitCode = 1; });

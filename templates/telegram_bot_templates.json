@@ -150,5 +150,176 @@
     "sendInterval": 3,
     "isChat": false,
     "waitResponse": true
+  },
+  {
+    "botUsername": "DoubonBot",
+    "name": "Doubon",
+    "commands": [
+      "/start"
+    ],
+    "successKeywords": [
+      "签到成功",
+      "簽到成功"
+    ],
+    "checkedKeywords": [
+      "您今天已经签到过了",
+      "今天已经签到过了",
+      "今天已经签到",
+      "今日已经签到",
+      "今日已签到",
+      "今天已签到",
+      "已经签到过了",
+      "请勿重复签到"
+    ],
+    "failKeywords": [
+      "签到失败",
+      "错误",
+      "error",
+      "invalid"
+    ],
+    "textIgnore": [],
+    "targetPhones": [],
+    "sendInterval": 3,
+    "isChat": false,
+    "waitResponse": true,
+    "requireExistingChat": true
+  },
+  {
+    "botUsername": "ChenyuEmby_Bot",
+    "name": "宸宇 Emby",
+    "commands": [
+      "/start"
+    ],
+    "successKeywords": [
+      "签到成功",
+      "簽到成功"
+    ],
+    "checkedKeywords": [
+      "您今天已经签到过了",
+      "今天已经签到过了",
+      "今天已经签到",
+      "今日已经签到",
+      "今日已签到",
+      "今天已签到",
+      "已经签到过了",
+      "请勿重复签到"
+    ],
+    "failKeywords": [
+      "签到失败",
+      "错误",
+      "error",
+      "invalid"
+    ],
+    "textIgnore": [],
+    "targetPhones": [],
+    "sendInterval": 3,
+    "isChat": false,
+    "waitResponse": true,
+    "requireExistingChat": true
+  },
+  {
+    "name": "终点站",
+    "botUsername": "EmbyPublicBot",
+    "commands": [
+      "/cancel",
+      "/checkin"
+    ],
+    "successKeywords": [
+      "签到成功",
+      "簽到成功",
+      "打卡成功",
+      "checkin successful",
+      "check-in successful"
+    ],
+    "checkedKeywords": [
+      "今天已签到",
+      "今日已签到",
+      "已经签到",
+      "明天再来",
+      "已经签过"
+    ],
+    "failKeywords": [
+      "签到失败",
+      "错误",
+      "error",
+      "invalid"
+    ],
+    "textIgnore": [
+      "会话已取消",
+      "没有活跃的会话"
+    ],
+    "useCaptcha": false,
+    "captchaLengths": [],
+    "captchaPattern": "",
+    "sendInterval": 3,
+    "waitResponse": true,
+    "isChat": false,
+    "requireExistingChat": true,
+    "source": "local",
+    "targetPhones": []
+  },
+  {
+    "name": "西瓜公益服",
+    "botUsername": "XGFree_bot",
+    "commands": [
+      "/start"
+    ],
+    "successKeywords": [
+      "签到成功"
+    ],
+    "checkedKeywords": [
+      "今日已签到",
+      "今天已经签到",
+      "今天已签到",
+      "已经签到过"
+    ],
+    "failKeywords": [
+      "签到失败",
+      "错误",
+      "error",
+      "invalid"
+    ],
+    "textIgnore": [],
+    "useCaptcha": false,
+    "captchaLengths": [],
+    "captchaPattern": "",
+    "sendInterval": 3,
+    "waitResponse": true,
+    "isChat": false,
+    "requireExistingChat": true,
+    "source": "local",
+    "targetPhones": []
+  },
+  {
+    "name": "Liminal",
+    "botUsername": "liminalembybot",
+    "commands": [
+      "/start"
+    ],
+    "successKeywords": [
+      "签到成功"
+    ],
+    "checkedKeywords": [
+      "今日已签到",
+      "今天已经签到",
+      "今天已签到",
+      "已经签到过"
+    ],
+    "failKeywords": [
+      "签到失败",
+      "错误",
+      "error",
+      "invalid"
+    ],
+    "textIgnore": [],
+    "useCaptcha": false,
+    "captchaLengths": [],
+    "captchaPattern": "",
+    "sendInterval": 3,
+    "waitResponse": true,
+    "isChat": false,
+    "requireExistingChat": true,
+    "source": "local",
+    "targetPhones": []
   }
 ]

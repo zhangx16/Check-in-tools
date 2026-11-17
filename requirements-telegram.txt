@@ -3,3 +3,6 @@ kurigram==2.2.12
 tgcrypto
 pillow
 ddddocrfix
+
+# Browser-compatible HTTPS for Turnstile-protected mini apps.
+curl_cffi==0.15.0

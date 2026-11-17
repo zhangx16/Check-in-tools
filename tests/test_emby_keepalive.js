@@ -31,6 +31,22 @@ test('verified playback advances schedule; failure preserves previous successful
  assert.equal(Date.parse(store.nextDue(after))-Date.parse(after.lastAttemptAt),3600000);assert.equal(store.lock(a.id),null);
  keep.edit(a.id,{enabled:false});assert.equal(store.nextDue(store.read()[0]),null);keep.remove(a.id);
 });
+test('playback cursor survives partial failures and resets when changing server',async()=>{
+ const a=keep.create(input);const cursor={itemId:'video',mediaSourceId:'source',positionTicks:300000000,byteOffset:2048,itemName:'视频'};
+ await keep.run(a.id,{playerImpl:async(account,{onProgress})=>{
+  await onProgress({watchedSeconds:10,playbackCursor:cursor});throw new Error('network lost');
+ }});
+ assert.deepEqual(store.read().find(x=>x.id===a.id).playbackCursor,cursor);
+ assert.equal(keep.list().find(x=>x.id===a.id).lastWatchSeconds,0);
+ await keep.run(a.id,{playerImpl:async account=>{
+  assert.deepEqual(account.playbackCursor,cursor);
+  return {ok:true,verified:true,watchedSeconds:30,playbackCursor:{...cursor,positionTicks:600000000},message:'ok'};
+ }});
+ assert.equal(keep.list().find(x=>x.id===a.id).playbackCursor.positionTicks,600000000);
+ keep.edit(a.id,{name:'renamed'});assert.ok(keep.list().find(x=>x.id===a.id).playbackCursor);
+ keep.edit(a.id,{serverUrl:'https://other.example',port:''});assert.equal(keep.list().find(x=>x.id===a.id).playbackCursor,null);
+ keep.remove(a.id);
+});
 test('random watch duration is selected once per run within the configured bounds',async()=>{
  const a=keep.create({...input,watchMinSeconds:300,watchMaxSeconds:1000});const selected=[];
  for(let i=0;i<5;i++){await keep.run(a.id,{playerImpl:async account=>{selected.push(account.watchSeconds);return {ok:true,verified:true,watchedSeconds:account.watchSeconds,bytes:100,message:'verified'}}})}
@@ -80,7 +96,7 @@ test('incorrect resumed byte range fails without claiming a successful watch',as
  assert.deepEqual(offsets,[0,32]);assert.equal(stopped,true);
 });
 
-test('30 second playback resumes interrupted CDN streams without leaking credentials',{timeout:45000},async()=>{
+test('30 second playback resumes interrupted CDN streams without leaking credentials',{timeout:80000},async()=>{
  const events=[];let playedAt=null,streamBytes=0,mode='ok';const streams=new Set();const offsets=[];
  const mediaServer=http.createServer((req,res)=>{
   assert.equal(req.headers['x-emby-token'],undefined);assert.equal(req.headers['x-emby-authorization'],undefined);
@@ -105,7 +121,7 @@ test('30 second playback resumes interrupted CDN streams without leaking credent
    events.push({path:url.pathname,position:json.PositionTicks});
    if(url.pathname.endsWith('/Stopped'))playedAt=new Date().toISOString();res.writeHead(204);res.end();return;
   }
-  if(url.pathname==='/Users/u1/Items/v1'){send({UserData:{LastPlayedDate:mode==='stale'?'2020-01-01T00:00:00Z':playedAt}});return}
+  if(url.pathname==='/Users/u1/Items/v1'){send({Id:'v1',Name:'测试视频',RunTimeTicks:36000000000,UserData:{LastPlayedDate:mode==='stale'?'2020-01-01T00:00:00Z':playedAt}});return}
   res.writeHead(404);res.end();
  });
  server.listen(0,'127.0.0.1');await once(server,'listening');const account={...store.normalize(input),serverUrl:`http://127.0.0.1:${server.address().port}`};
@@ -117,6 +133,15 @@ test('30 second playback resumes interrupted CDN streams without leaking credent
   assert.ok(streamBytes>0);assert.ok(result.bytes>0);assert.ok(progress.length>=3);
   assert.equal(result.reconnects,1);assert.equal(offsets[0],0);assert.ok(offsets[1]>0);
   assert.equal(events[0].path,'/Sessions/Playing');assert.equal(events.at(-1).path,'/Sessions/Playing/Stopped');assert.equal(events.at(-1).position,300000000);
+  assert.equal(result.playbackCursor.positionTicks,300000000);
+  const eventCount=events.length;
+  const resumed=await player.play({...account,playbackCursor:result.playbackCursor});
+  assert.equal(events[eventCount].position,300000000);
+  assert.equal(resumed.startPositionTicks,300000000);
+  assert.equal(resumed.endPositionTicks,600000000);
+  assert.equal(resumed.watchedSeconds,30);
+  assert.equal(events.at(-1).position,600000000);
+  assert.ok(offsets.includes(result.playbackCursor.byteOffset));
   const controller=new AbortController();setTimeout(()=>controller.abort(),50);
   await assert.rejects(player.play(account,{signal:controller.signal}));
   assert.equal(events.at(-1).path,'/Sessions/Playing/Stopped');
