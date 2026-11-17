@@ -24,7 +24,7 @@ from telegram_captcha import answer_captcha
 from telegram_visual import visual_enabled, authorize as authorize_visual, answer_challenge, claim_attempt
 
 PROJECT_ROOT = Path(os.environ.get("CHECKIN_PROJECT_ROOT", Path(__file__).resolve().parents[1])).resolve()
-DATA_DIR = PROJECT_ROOT / "data"
+DATA_DIR = Path(os.environ.get("CHECKIN_DATA_DIR", PROJECT_ROOT / "data")).resolve()
 FORM_FILE = DATA_DIR / "embykeeper" / "form.json"
 CACHE_FILE = DATA_DIR / "embykeeper" / "runtime" / "cache.json"
 SKIP_CACHE_FILE = DATA_DIR / "telegram_bot_checkin_skip.json"
@@ -1643,9 +1643,10 @@ async def main():
 
 
 if __name__ == "__main__":
+    os.umask(0o077)
     from telegram_worker_lock import worker_lock
     try:
-        with worker_lock(Path(__file__).resolve().parents[1] / "data/embykeeper/run.lock"):
+        with worker_lock(DATA_DIR / "embykeeper/run.lock"):
             raise SystemExit(asyncio.run(main()))
     except RuntimeError:
         print("Telegram 签到任务正在运行，请稍后重试")

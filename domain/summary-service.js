@@ -514,10 +514,15 @@ module.exports = function createService(context) {
       .join("|");
   }
   async function buildMobileSummary(req) {
-    const key = publicBaseFromRequest(req) + "|" + summaryVersion();
-    const cached = summaryCache.get(key);
-    if (cached) return cached;
-    return summaryCache.set(key, await buildMobileSummaryUncached(req));
+    const start = performance.now();
+    try {
+      const key = publicBaseFromRequest(req) + "|" + summaryVersion();
+      const cached = summaryCache.get(key);
+      if (cached) return cached;
+      return summaryCache.set(key, await buildMobileSummaryUncached(req));
+    } finally {
+      require("../lib/metrics").observeSummary(performance.now() - start);
+    }
   }
   const summaryCache = new (require("../lib/cache/memory").MemoryCache)();
 

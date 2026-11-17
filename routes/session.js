@@ -1,5 +1,6 @@
 module.exports = function createRoutes(context) {
   const {
+    health,
     formatDateTime,
     HOST,
     PORT,
@@ -14,6 +15,11 @@ module.exports = function createRoutes(context) {
   return async function route(req, res, url) {
     const pathname = url.pathname,
       method = req.method || "GET";
+    if (method === "GET" && pathname === "/api/healthz") {
+      const result = health();
+      sendJson(res, result.ok ? 200 : 503, result);
+      return;
+    }
     if (method === "GET" && pathname === "/api/health") {
       sendJson(res, 200, {
         ok: true,

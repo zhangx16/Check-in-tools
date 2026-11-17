@@ -1,0 +1,11 @@
+[Unit]
+Description=Unified daily check-ins (opt-in)
+
+[Timer]
+OnCalendar=*-*-* 00:10:00 Asia/Shanghai
+RandomizedDelaySec=20m
+Persistent=true
+Unit=checkin-runner.service
+
+[Install]
+WantedBy=timers.target

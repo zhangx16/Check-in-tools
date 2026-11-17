@@ -1,4 +1,4 @@
-"""Local image CAPTCHA recognition; no remote auth or OCR service."""
+"""Compatibility hook: local OCR is disabled; no model or OCR runtime is loaded."""
 import asyncio
 import re
 _ENGINE = None
@@ -7,8 +7,7 @@ _ENGINE = None
 def recognize(image, lengths):
     global _ENGINE
     if _ENGINE is None:
-        import ddddocr
-        _ENGINE = ddddocr.DdddOcr(show_ad=False)
+        return None
     answer = _ENGINE.classification(image)
     answer = re.sub(r'\s+', '', str(answer or ''))
     allowed = [lengths] if isinstance(lengths, int) else lengths
@@ -20,6 +19,8 @@ def recognize(image, lengths):
 
 
 async def answer_captcha(client, message, bot):
+    if _ENGINE is None:
+        return False
     if not bot.get('useCaptcha') or not getattr(message, 'photo', None):
         return False
     caption = message.caption or ''

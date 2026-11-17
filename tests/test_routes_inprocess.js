@@ -304,7 +304,7 @@ test("in-process HTTP contract exercises both route families against temporary d
       .status,
     200,
   );
-  assert.equal((await web("/api/embykeeper/run", "POST", {})).status, 500);
+  assert.equal((await web("/api/embykeeper/run", "POST", {})).status, 202);
   assert.equal(
     (
       await request(

@@ -2,7 +2,7 @@ const fs = require("node:fs"), os = require("node:os"), path = require("node:pat
 const { spawn } = require("node:child_process");
 const { once } = require("node:events");
 const credentials = { ADMIN_USER: "tester", ADMIN_PASS: "isolated-test-password", SESSION_SECRET: "isolated-test-session-secret", APP_API_TOKEN: "isolated-test-bearer-token" };
-async function startServer(t, seed = {}) {
+async function startServer(t, seed = {}, extraEnv = {}) {
  const root = fs.mkdtempSync(path.join(os.tmpdir(), "checkin-http-"));
  const project = path.resolve(__dirname, "..");
  for (const name of ["lib", "routes", "domain", "templates", "public"]) fs.cpSync(path.join(project,name),path.join(root,name),{recursive:true});
@@ -11,7 +11,7 @@ async function startServer(t, seed = {}) {
  for (const [file,value] of Object.entries(seed)) fs.writeFileSync(path.join(data,file),JSON.stringify(value));
  // Port zero is bound by the child and reported via IPC, avoiding reserve/rebind races.
  fs.writeFileSync(path.join(root,"test-start.cjs"), `const server=require('./server').createServer();server.listen(0,'127.0.0.1',()=>process.send(server.address().port));`);
- const child=spawn(process.execPath,["test-start.cjs"],{cwd:root,env:{PATH:process.env.PATH,...(process.env.NODE_V8_COVERAGE?{NODE_V8_COVERAGE:process.env.NODE_V8_COVERAGE}:{}),ICON_FETCH_ENABLED:"0",...credentials},stdio:["ignore","ignore","pipe","ipc"]});
+ const child=spawn(process.execPath,["test-start.cjs"],{cwd:root,env:{PATH:process.env.PATH,...(process.env.NODE_V8_COVERAGE?{NODE_V8_COVERAGE:process.env.NODE_V8_COVERAGE}:{}),ICON_FETCH_ENABLED:"0",...credentials,...extraEnv},stdio:["ignore","ignore","pipe","ipc"]});
  let stderr="";child.stderr.on("data",x=>stderr+=x);
  const port=await Promise.race([once(child,"message").then(x=>x[0]),once(child,"exit").then(()=>{throw Error("Server exited: "+stderr);})]);
  t.after(async()=>{child.kill();await once(child,"exit");fs.rmSync(root,{recursive:true,force:true});});

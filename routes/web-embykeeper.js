@@ -1,5 +1,6 @@
 module.exports = function createRoutes(context) {
   const {
+    telegramJobs,
     publicTelegramForm,
     publicTelegramConfig,
     updateTelegramConfig,
@@ -59,12 +60,16 @@ module.exports = function createRoutes(context) {
       });
       return;
     }
+    if (method === "GET" && pathname === "/api/embykeeper/job") {
+      sendJson(res, 200, telegramJobs.get());
+      return;
+    }
     if (method === "POST" && pathname === "/api/embykeeper/run") {
-      const result = await runEmbykeeperOnce();
-      sendJson(res, result.ok ? 200 : 500, {
-        ok: result.ok,
-        output: result.output,
-        error: result.error,
+      sendJson(res, 202, {
+        ok: true,
+        job: telegramJobs.launch(),
+        output: "",
+        error: "",
         status: getEmbykeeperStatus(),
         checkinResults: readTelegramCheckinResults(),
       });

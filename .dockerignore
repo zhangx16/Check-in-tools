@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+!.env.example
+data
+.venv*
+node_modules
+public/bot-avatars
+public/site-icons
+design
+artifacts
+*.log
+__pycache__

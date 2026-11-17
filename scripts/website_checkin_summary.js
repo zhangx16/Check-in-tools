@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 
-const { loadLocalEnv, formatIso, formatBeijing } = require("../lib/common");
+const path = require("path");
+const { updateJson } = require("../lib/store/json-store");
+const { evaluateFailures } = require("../lib/failure-streaks");
+const {
+  loadLocalEnv,
+  formatIso,
+  formatBeijing,
+  DATA_DIR,
+} = require("../lib/common");
 loadLocalEnv();
 
 const { readAccounts } = require("../lib/accounts");
@@ -8,44 +16,69 @@ const { sendTelegramReport } = require("../lib/telegram");
 const { buildCompactReport } = require("../lib/checkin-report");
 
 const PROVIDERS = [
-  { key: "thxnk", label: "练习生的日常", defaultBaseUrl: "https://thxnk.cc", balanceLabel: "当前余额", defaultCurrency: "只因" },
-  { key: "zzcat", label: "这只猫用户中心", defaultBaseUrl: "https://user.090911.xyz", balanceLabel: "当前猫币", defaultCurrency: "猫币" },
-  { key: "vpsnat", label: "VPSNAT 纳泰云", defaultBaseUrl: process.env.DEFAULT_VPSNAT_BASE_URL || "https://www.vpsnat.com", balanceLabel: "当前积分", defaultCurrency: "积分" },
+  {
+    key: "thxnk",
+    label: "练习生的日常",
+    defaultBaseUrl: "https://thxnk.cc",
+    balanceLabel: "当前余额",
+    defaultCurrency: "只因",
+  },
+  {
+    key: "zzcat",
+    label: "这只猫用户中心",
+    defaultBaseUrl: "https://user.090911.xyz",
+    balanceLabel: "当前猫币",
+    defaultCurrency: "猫币",
+  },
+  {
+    key: "vpsnat",
+    label: "VPSNAT 纳泰云",
+    defaultBaseUrl:
+      process.env.DEFAULT_VPSNAT_BASE_URL || "https://www.vpsnat.com",
+    balanceLabel: "当前积分",
+    defaultCurrency: "积分",
+  },
   {
     key: "glados",
     label: "GLaDOS",
     defaultBaseUrl: "https://glados.network",
     balanceLabel: "剩余天数",
-    defaultCurrency: "Points"
+    defaultCurrency: "Points",
   },
   {
     key: "embypulse",
     label: "EmbyPulse",
-    defaultBaseUrl: process.env.DEFAULT_EMBYPULSE_BASE_URL || "https://embypulse.example.com",
+    defaultBaseUrl:
+      process.env.DEFAULT_EMBYPULSE_BASE_URL || "https://embypulse.example.com",
     balanceLabel: "当前积分",
-    defaultCurrency: "积分"
+    defaultCurrency: "积分",
   },
   {
     key: "embymb",
     label: "EmbyMB",
-    defaultBaseUrl: process.env.DEFAULT_EMBYMB_BASE_URL || "https://embymb.ichinosekotomi.com",
+    defaultBaseUrl:
+      process.env.DEFAULT_EMBYMB_BASE_URL ||
+      "https://embymb.ichinosekotomi.com",
     balanceLabel: "当前余额",
-    defaultCurrency: "积分"
-  }
+    defaultCurrency: "积分",
+  },
 ];
 
 function readWebsiteAccounts() {
   const byKey = new Map(PROVIDERS.map((provider) => [provider.key, provider]));
-  return readAccounts().filter(account => byKey.has(account.provider || "glados")).map((account) => {
-    const provider = byKey.get(account.provider || "glados") || byKey.get("glados");
-    return {
-      ...account,
-      provider: provider.key,
-      providerLabel: provider.label,
-      providerConfig: provider,
-      baseUrl: account.baseUrl || provider.defaultBaseUrl
-    };
-  });
+  return readAccounts()
+    .filter((account) => byKey.has(account.provider || "glados"))
+    .map((account) => {
+      const provider =
+        byKey.get(account.provider || "glados") || byKey.get("glados");
+      return {
+        ...account,
+        provider: provider.key,
+        providerLabel: provider.label,
+        providerConfig: provider,
+        baseUrl: account.baseUrl || provider.defaultBaseUrl,
+      };
+    });
 }
 
 function numberOrNull(value) {
@@ -69,7 +102,9 @@ function dateFromIso(value) {
 
 function latestGladosCheckinDate(account) {
   const detail = account.lastCheckin?.raw?.list?.[0]?.detail;
-  return typeof detail === "string" && /^\d{4}-\d{2}-\d{2}$/.test(detail) ? detail : "";
+  return typeof detail === "string" && /^\d{4}-\d{2}-\d{2}$/.test(detail)
+    ? detail
+    : "";
 }
 
 function getCheckinDate(account) {
@@ -135,22 +170,29 @@ function getBalanceLine(account) {
   const currency = getCurrency(account);
 
   if (account.provider === "glados") {
-    const leftDays = status.leftDays != null ? formatAmount(status.leftDays) : "--";
+    const leftDays =
+      status.leftDays != null ? formatAmount(status.leftDays) : "--";
     const vip = status.vip ?? "--";
     return `${config.balanceLabel}: ${leftDays} | VIP: ${vip}`;
   }
 
-  const balance = status.points ?? checkin.balance ?? checkin.currentPoints ?? "--";
+  const balance =
+    status.points ?? checkin.balance ?? checkin.currentPoints ?? "--";
   return `${config.balanceLabel}: ${balance} ${currency}`.trim();
 }
 
 function summarize(items) {
   return {
     total: items.length,
-    success: items.filter((item) => item.lastCheckin?.ok && !item.lastCheckin?.already).length,
+    success: items.filter(
+      (item) => item.lastCheckin?.ok && !item.lastCheckin?.already,
+    ).length,
     already: items.filter((item) => item.lastCheckin?.already).length,
     failed: items.filter((item) => !item.lastCheckin?.ok).length,
-    active: items.filter((item) => item.lastStatus?.state === "active" || item.lastStatus?.ok === true).length
+    active: items.filter(
+      (item) =>
+        item.lastStatus?.state === "active" || item.lastStatus?.ok === true,
+    ).length,
   };
 }
 
@@ -158,7 +200,7 @@ function buildReport(accounts, sentAt) {
   const summary = summarize(accounts);
   const providerGroups = PROVIDERS.map((provider) => ({
     provider,
-    accounts: accounts.filter((account) => account.provider === provider.key)
+    accounts: accounts.filter((account) => account.provider === provider.key),
   })).filter((group) => group.accounts.length > 0);
 
   const lines = [
@@ -171,21 +213,27 @@ function buildReport(accounts, sentAt) {
     `今日已签: ${summary.already}`,
     `签到失败: ${summary.failed}`,
     `状态正常: ${summary.active}`,
-    ""
+    "",
   ];
 
   for (const group of providerGroups) {
     const groupSummary = summarize(group.accounts);
-    lines.push(`${group.provider.label}: ${groupSummary.total} 个账号，成功 ${groupSummary.success}，已签 ${groupSummary.already}，失败 ${groupSummary.failed}`);
+    lines.push(
+      `${group.provider.label}: ${groupSummary.total} 个账号，成功 ${groupSummary.success}，已签 ${groupSummary.already}，失败 ${groupSummary.failed}`,
+    );
 
     for (const account of group.accounts) {
-      lines.push(`- ${account.name || account.username || account.id || group.provider.label}`);
+      lines.push(
+        `- ${account.name || account.username || account.id || group.provider.label}`,
+      );
       lines.push(`  站点: ${account.baseUrl || group.provider.defaultBaseUrl}`);
       lines.push(`  签到: ${getCheckinLabel(account)}`);
       lines.push(`  状态: ${getStatusLine(account)}`);
       lines.push(`  ${getBalanceLine(account)}`);
       lines.push(`  最近签到日: ${getCheckinDate(account)}`);
-      lines.push(`  最后更新时间: ${account.updatedAt || account.lastStatusAt || account.lastCheckinAt || "--"}`);
+      lines.push(
+        `  最后更新时间: ${account.updatedAt || account.lastStatusAt || account.lastCheckinAt || "--"}`,
+      );
     }
 
     lines.push("");
@@ -206,14 +254,50 @@ async function main() {
 
   try {
     const chatId = await sendTelegramReport(report);
-    console.log(`[website-checkin-summary] telegram delivered to ${chatId}`);
+    console.log("[website-checkin-summary] telegram delivered");
+    const stateFile = path.join(DATA_DIR, "failure_streaks.json");
+    let alerts = [];
+    updateJson(
+      stateFile,
+      (previous) => {
+        const evaluated = evaluateFailures(previous, accounts, {
+          threshold: Number(process.env.FAILURE_ALERT_DAYS || 3),
+        });
+        alerts = evaluated.alerts;
+        return evaluated.next;
+      },
+      { fallback: {} },
+    );
+    if (alerts.length) {
+      await sendTelegramReport(
+        [
+          "网站签到连续失败告警",
+          ...alerts.map(
+            (a) =>
+              `${a.name} (${a.provider}) 已连续 ${a.days} 天失败，请在面板查看原因`,
+          ),
+        ].join("\n"),
+      );
+      updateJson(
+        stateFile,
+        (current) => {
+          for (const alert of alerts)
+            if (current[alert.key]) current[alert.key].alertedOn = alert.date;
+          return current;
+        },
+        { fallback: {} },
+      );
+    }
   } catch (error) {
-    console.error(`[website-checkin-summary] telegram delivery failed: ${error.message}`);
+    console.error("[website-checkin-summary] telegram delivery failed");
     process.exitCode = 1;
   }
 }
 
-main().catch((error) => {
-  console.error(`[website-checkin-summary] fatal: ${error.stack || error.message}`);
-  process.exitCode = 1;
-});
+if (require.main === module)
+  main().catch((error) => {
+    console.error("[website-checkin-summary] fatal error");
+    process.exitCode = 1;
+  });
+
+module.exports = { main, readWebsiteAccounts };

@@ -1,8 +1,6 @@
-# Independent Telegram client and local OCR; Embykeeper is not required.
+# Telegram client and mini-app HTTPS. Local OCR is disabled.
 kurigram==2.2.12
-tgcrypto
-pillow
-ddddocrfix
+tgcrypto==1.2.5
 
 # Browser-compatible HTTPS for Turnstile-protected mini apps.
 curl_cffi==0.15.0

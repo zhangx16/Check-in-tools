@@ -1,5 +1,6 @@
 module.exports = function createRoutes(context) {
   const {
+    telegramJobs,
     PROJECT_ROOT,
     fs,
     path,
@@ -16,6 +17,14 @@ module.exports = function createRoutes(context) {
   return async function route(req, res, url) {
     const pathname = url.pathname,
       method = req.method || "GET";
+    if (pathname === "/api/v1/telegram/jobs" && method === "POST") {
+      sendJson(res, 202, telegramJobs.launch());
+      return;
+    }
+    if (pathname === "/api/v1/telegram/jobs" && method === "GET") {
+      sendJson(res, 200, telegramJobs.get());
+      return;
+    }
     if (method === "GET" && pathname === "/api/v1/telegram/catalog") {
       const catalog = JSON.parse(
         fs.readFileSync(

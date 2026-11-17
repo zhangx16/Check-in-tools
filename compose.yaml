@@ -1,0 +1,18 @@
+services:
+  web:
+    build:
+      context: .
+      target: worker
+    env_file: /etc/glados-checkin.env
+    ports: ["127.0.0.1:22821:22821"]
+    volumes: ["./data:/app/data"]
+    restart: unless-stopped
+  runner:
+    profiles: ["runner"]
+    build:
+      context: .
+      target: worker
+    env_file: /etc/glados-checkin.env
+    volumes: ["./data:/app/data"]
+    command: ["node", "scripts/checkin_runner.js", "--loop"]
+    restart: unless-stopped

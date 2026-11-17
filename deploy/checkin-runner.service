@@ -1,0 +1,16 @@
+[Unit]
+Description=Unified check-in runner (opt-in replacement for provider daily timers)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=www-data
+WorkingDirectory=/opt/glados-checkin-web
+EnvironmentFile=/etc/glados-checkin.env
+Environment=CHECKIN_PROJECT_ROOT=/opt/glados-checkin-web
+ExecStart=/usr/bin/node /opt/glados-checkin-web/scripts/checkin_runner.js
+TimeoutStartSec=4h
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
