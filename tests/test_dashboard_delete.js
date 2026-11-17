@@ -12,6 +12,7 @@ test('authenticated project deletion preserves unrelated configuration and permi
  const project=path.resolve(__dirname,'..');
  fs.copyFileSync(path.join(project,'server.js'),path.join(root,'server.js'));
  fs.cpSync(path.join(project,'lib'),path.join(root,'lib'),{recursive:true});
+ fs.cpSync(path.join(project,'routes'),path.join(root,'routes'),{recursive:true});
  fs.mkdirSync(path.join(root,'templates'));
  fs.copyFileSync(path.join(project,'templates/telegram_bot_catalog.json'),path.join(root,'templates/telegram_bot_catalog.json'));
  const data=path.join(root,'data');fs.mkdirSync(path.join(data,'embykeeper'),{recursive:true});
@@ -23,15 +24,15 @@ test('authenticated project deletion preserves unrelated configuration and permi
  write('telegram_bot_checkin_skip.json',{'+12345678901':{FOOBOT:{reason:'old'},KeepBot:{reason:'keep'}}});
  write('accounts.json',[{id:'g1',name:'g1',cookie:'private'},{id:'g2',name:'g2',cookie:'private'}]);
  write('embymb_accounts.json',[{id:'e1',name:'keep',password:'private'}]);
- const listener=net.createServer();listener.listen(0,'127.0.0.1');await once(listener,'listening');const port=listener.address().port;await new Promise(r=>listener.close(r));
- const child=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,HOST:'127.0.0.1',PORT:String(port),ADMIN_USER:'test-admin',ADMIN_PASS:'test-password',APP_API_TOKEN:'',CHECKIN_API_TOKEN:''},stdio:'ignore'});
+ const listener=net.createServer();listener.listen({host:'127.0.0.1',port:32000+Math.floor(Math.random()*20000)});await once(listener,'listening');const port=listener.address().port;await new Promise(r=>listener.close(r));
+ const child=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,HOST:'127.0.0.1',PORT:String(port),SESSION_SECRET:'test-session-secret-long-enough',ADMIN_USER:'test-admin',ADMIN_PASS:'test-password-long-enough',APP_API_TOKEN:'',CHECKIN_API_TOKEN:''},stdio:'ignore'});
  const origin=`http://127.0.0.1:${port}`;
  try{
   for(let i=0;i<60;i++){try{await fetch(origin+'/api/session');break}catch{await new Promise(r=>setTimeout(r,50))}}
   const request=(id,cookie)=>fetch(origin+'/api/v1/dashboard/projects/'+encodeURIComponent(id),{method:'DELETE',headers:cookie?{Cookie:cookie}:{}});
   assert.equal((await request('tg:FooBot')).status,401);
   assert.equal(read('embykeeper/form.json').botTemplates.length,2);
-  const login=await fetch(origin+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'test-admin',password:'test-password'})});
+  const login=await fetch(origin+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'test-admin',password:'test-password-long-enough'})});
   assert.equal(login.status,200);const cookie=login.headers.getSetCookie().map(c=>c.split(';')[0]).join('; ');
   const rename = (id, name, auth = cookie) => fetch(origin+'/api/v1/dashboard/projects/'+encodeURIComponent(id), {
     method: 'PATCH', headers: { 'Content-Type':'application/json', ...(auth ? { Cookie:auth } : {}) }, body:JSON.stringify({name})
@@ -50,7 +51,9 @@ test('authenticated project deletion preserves unrelated configuration and permi
   assert.equal((await reset.json()).title,'GLaDOS');
   assert.equal(read('project_names.json')['web:glados'],undefined);
   assert.equal((await request('tg:foobot',cookie)).status,200);
-  assert.deepEqual(read('embykeeper/form.json').botTemplates,[kept]);
+  assert.equal(read('embykeeper/form.json').botTemplates.length,1);
+  assert.deepEqual(read('embykeeper/form.json').botTemplates[0].buttonSequence,kept.buttonSequence);
+  assert.deepEqual(read('embykeeper/form.json').botTemplates[0].extraField,kept.extraField);
   assert.equal(read('project_names.json')['tg:foobot'],undefined);
   assert.equal(read('embykeeper/form.json').telegramAccounts[0].session,'keep-session');
   const keepaliveBody={name:'临时测试站',serverUrl:'https://emby.example.test',username:'test',password:'private-emby',intervalDays:7,watchSeconds:180,notes:'30 天内观看一次'};

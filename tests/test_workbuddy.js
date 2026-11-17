@@ -47,7 +47,7 @@ test('merging execution records retains edited credentials and account metadata'
 });
 async function tempProject(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'workbuddy-test-'));
-  for (const folder of ['lib', 'scripts', 'templates']) fs.cpSync(path.join(root, folder), path.join(dir, folder), { recursive: true });
+  for (const folder of ['lib', 'routes', 'scripts', 'templates']) fs.cpSync(path.join(root, folder), path.join(dir, folder), { recursive: true });
   fs.copyFileSync(path.join(root, 'server.js'), path.join(dir, 'server.js'));
   fs.mkdirSync(path.join(dir,'public/dashboard'),{recursive:true});
   for(const name of ['index.html','workbuddy-ui.js']) fs.copyFileSync(path.join(root,'public/dashboard',name),path.join(dir,'public/dashboard',name));
@@ -108,12 +108,12 @@ test('authenticated account API protects tokens; background jobs are prompt, sur
   const dir = await tempProject(t);
   // Deterministic offline process; no upstream API or Telegram traffic.
   fs.writeFileSync(path.join(dir,'scripts/workbuddy_bridge.py'), `import time,json,sys\ns=json.load(sys.stdin)\ntime.sleep(.25)\nprint(json.dumps({'result':'ALREADY','report':'今日已签过'}))\n`);
-  const socket = net.createServer(); socket.listen(0,'127.0.0.1');await once(socket,'listening');const port=socket.address().port;await new Promise(r=>socket.close(r));
-  const child=spawn(process.execPath,['server.js'],{cwd:dir,env:{...process.env,PORT:String(port),HOST:'127.0.0.1',APP_API_TOKEN:'test-api',WORKBUDDY_ACCOUNTS_FILE:path.join(dir,'data/workbuddy_accounts.json')},stdio:['ignore','pipe','pipe']});
+  const socket = net.createServer(); socket.listen(32000+Math.floor(Math.random()*20000),'127.0.0.1');await once(socket,'listening');const port=socket.address().port;await new Promise(r=>socket.close(r));
+  const child=spawn(process.execPath,['server.js'],{cwd:dir,env:{...process.env,PORT:String(port),HOST:'127.0.0.1',ADMIN_PASS:'test-password-long-enough',SESSION_SECRET:'test-session-secret-long-enough',APP_API_TOKEN:'test-api-token-long-enough',WORKBUDDY_ACCOUNTS_FILE:path.join(dir,'data/workbuddy_accounts.json')},stdio:['ignore','pipe','pipe']});
   t.after(async()=>{if(child.exitCode===null){child.kill();await once(child,'close')}});
   let ready=false;for(let i=0;i<100;i++){try{if((await fetch(`http://127.0.0.1:${port}/api/health`)).ok){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,20))}assert.ok(ready);
   const request=async(route,method='GET',body,auth=true)=>{
-    const r=await fetch(`http://127.0.0.1:${port}/api/v1`+route,{method,headers:{'Content-Type':'application/json',...(auth?{Authorization:'Bearer test-api'}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,body:await r.json()};
+    const r=await fetch(`http://127.0.0.1:${port}/api/v1`+route,{method,headers:{'Content-Type':'application/json',...(auth?{Authorization:'Bearer test-api-token-long-enough'}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,body:await r.json()};
   };
   const asset=await fetch(`http://127.0.0.1:${port}/dashboard/workbuddy-ui.js?v=test`);
   assert.equal(asset.status,200);assert.match(await asset.text(),/window.workbuddyUI/);

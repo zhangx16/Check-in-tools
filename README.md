@@ -394,3 +394,13 @@ node scripts/import_workbuddy_auth.js "$HOME/.local/share/CodeBuddyExtension/Dat
 面板显示每日签到、Buddy 旅行与礼物、成长任务接单与领奖、断登补签、连登奖励兑换、盲盒抽奖、能量开 Buddy 盲盒、成长能量，并展示服务端返回的具体成长子任务。只处理满足条件的奖励，未解锁、旅行中或缺少补登卡不视为已完成。每日 00:05 任务保留；新增 workbuddy-growth-poll.timer，每小时第 20 分钟执行完整幂等检查，及时领回旅行礼物、补派 Buddy 和补跑错过的签到。轮询不发送常规 Telegram 通知。
 
 授权 API：POST /api/v1/workbuddy/logins（名称和可选 accountId）；GET /api/v1/workbuddy/logins/:id 查询；DELETE 取消。登录链接有效期 5 分钟，只有经过工作台认证的用户可操作，访问/刷新令牌不通过接口回显。GET /api/v1/workbuddy/accounts 仅返回 WorkBuddy 账号的脱敏数据。
+
+### Production refactor PR1: HTTP and security
+
+`server.js` starts `lib/app.js`; native HTTP adapters are in `routes/`, with shared authentication, response, static-file and account-write helpers under `lib/http/`. The pre-refactor route inventory is in `docs/route-inventory.md`. Provider requests and check-in judgments are unchanged.
+
+Before deploying this branch, set `ADMIN_PASS` and `SESSION_SECRET` to non-default values of at least 16 characters. Optional `APP_API_TOKEN` (or legacy `CHECKIN_API_TOKEN`) and `APP_API_TOKEN_SECONDARY` must also be at least 16 characters when set. The secondary token allows rotation without disconnecting existing clients. Startup refuses invalid settings; no credentials are generated or overwritten. Existing cookies require a fresh login after upgrade: new signed cookies expire after 30 days. Five failed logins per socket IP block further attempts until the original ten-minute window expires; successful logins do not clear failures. Nginx deployments share a rate-limit bucket unless separate client connections reach Node; forwarded IP headers are deliberately not trusted.
+
+Account details expose `hasPassword` instead of passwords. Empty password updates preserve the stored password. Exports omit passwords and cookies unless an authenticated web session explicitly uses `/api/accounts/export?includeSecrets=1`; sensitive exports and write requests are audited in `data/audit.log.jsonl` (mode 600). Request logs include a request ID, response status and duration, never request bodies, credentials, or query strings. JSON request bodies are limited to 256 KiB; account imports allow 1 MiB.
+
+Validation: `npm run check && npm test`. HTTP tests run in temporary projects with synthetic credentials and exercise health, dashboard/login HTML, authenticated APIs, expiration, rate limiting, redacted export, audit and Telegram catalog TOML persistence. No live account files are used. Rollback: revert this PR; the JSON account format is unchanged, and users log in again. No deployment/timer changes are part of PR1.
